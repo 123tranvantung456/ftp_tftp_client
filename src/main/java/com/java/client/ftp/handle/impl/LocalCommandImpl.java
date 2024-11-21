@@ -1,6 +1,6 @@
-package com.javaweb.client.system.handle.impl;
+package com.java.client.ftp.handle.impl;
 
-import com.javaweb.client.system.handle.LocalCommand;
+import com.java.client.ftp.handle.LocalCommand;
 import org.springframework.stereotype.Component;
 
 @Component

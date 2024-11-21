@@ -1,27 +1,27 @@
-package com.javaweb.client.system.handle.impl;
+package com.java.client.ftp.handle.impl;
 
-import com.javaweb.client.system.handle.FileCommand;
+import com.java.client.ftp.handle.FileCommand;
 import org.springframework.stereotype.Component;
 
 @Component
 public class FileCommandImpl implements FileCommand {
     @Override
-    public void put(String localFilePath, String remoteFilePath) {
+    public void put(String filename) {
 
     }
 
     @Override
-    public void multiPut(String[] localFilePaths, String remoteDirectory) {
+    public void multiPut(String[] filenames) {
 
     }
 
     @Override
-    public void get(String remoteFilePath, String localFilePath) {
+    public void get(String filename) {
 
     }
 
     @Override
-    public void multiGet(String[] remoteFilePaths, String localDirectory) {
+    public void multiGet(String[] filenames) {
 
     }
 

@@ -1,16 +1,16 @@
-package com.javaweb.client.system.handle.impl;
-import com.javaweb.client.system.handle.CommonCommand;
+package com.java.client.ftp.handle.impl;
+import com.java.client.ftp.handle.CommonCommand;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CommonCommandImpl implements CommonCommand {
     @Override
-    public void listDirectory(String remoteDirectory) {
+    public void listDetail(String remoteDirectory) {
 
     }
 
     @Override
-    public void multiListDirectory(String remoteDirectory, String outputFile) {
+    public void listDetailAndStore(String remoteDirectory, String outputFile) {
 
     }
 
@@ -20,7 +20,7 @@ public class CommonCommandImpl implements CommonCommand {
     }
 
     @Override
-    public void multiList(String remoteDirectory, String outputFile) {
+    public void listAndStore(String remoteDirectory, String outputFile) {
 
     }
 

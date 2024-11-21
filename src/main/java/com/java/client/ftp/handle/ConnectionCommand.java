@@ -1,7 +1,7 @@
-package com.javaweb.client.system.handle;
+package com.java.client.ftp.handle;
 
 public interface ConnectionCommand {
-    void openConnection(String serverAddress, int port);
+    void openConnection(String serverAddress, Integer serverPort);
     void closeConnection();
     void disconnect();
     void bye();

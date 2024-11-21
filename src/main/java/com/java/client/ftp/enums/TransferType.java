@@ -1,4 +1,4 @@
-package com.javaweb.client.system.enums;
+package com.java.client.ftp.enums;
 
 public enum TransferType {
     ASCII, BINARY

@@ -1,7 +1,7 @@
-package com.javaweb.client.system;
+package com.java.client.ftp.system;
 
-import com.javaweb.client.system.enums.TransferMode;
-import com.javaweb.client.system.enums.TransferType;
+import com.java.client.ftp.enums.TransferMode;
+import com.java.client.ftp.enums.TransferType;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.stereotype.Component;
@@ -12,5 +12,5 @@ import org.springframework.stereotype.Component;
 public class ClientConfig {
     private String currentDirectory = Const.DEFAULT_DIRECTORY;
     private TransferType transferType = TransferType.ASCII;
-    private TransferMode transferMode = TransferMode.ACTIVE;
+    private TransferMode transferModeDefault = TransferMode.ACTIVE;
 }

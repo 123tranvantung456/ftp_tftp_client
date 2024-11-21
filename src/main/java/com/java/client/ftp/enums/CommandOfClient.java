@@ -1,6 +1,8 @@
-package com.javaweb.client.system.enums;
+package com.java.client.ftp.enums;
 
 public enum CommandOfClient {
+    //1. Standard FTP of CMD
+
     // file
     PUT,
     MPUT,
@@ -55,5 +57,9 @@ public enum CommandOfClient {
     QUOTE,
 
     //help
-    REMOTEHELP;
+    REMOTEHELP,
+
+    //2. Extended FTP
+    CONNECT,
+    ;
 }

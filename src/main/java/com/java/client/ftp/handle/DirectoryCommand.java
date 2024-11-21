@@ -1,4 +1,4 @@
-package com.javaweb.client.system.handle;
+package com.java.client.ftp.handle;
 
 public interface DirectoryCommand {
     void makeDirectory(String remoteDirectory);
