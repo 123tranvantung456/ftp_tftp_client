@@ -1,5 +1,6 @@
 package com.java.client.ftp.system;
 
+import com.java.client.ftp.util.PrintUtil;
 import org.springframework.stereotype.Component;
 import java.io.*;
 import java.net.*;
@@ -11,30 +12,40 @@ public class FTPClient {
     private BufferedReader reader;
     private BufferedWriter writer;
 
-    public void connect(String serverAddress, int port) throws IOException {
+    public void connect(String serverAddress, Integer port) throws IOException {
         socket = new Socket(serverAddress, port);
         reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-        System.out.println("Connected to server: " + serverAddress + " on port " + port);
+        PrintUtil.printToConsole("Connected to server: " + serverAddress + " on port " + port);
     }
 
     public void close() throws IOException {
         if (socket != null && !socket.isClosed()) {
             socket.close();
-            System.out.println("Connection closed.");
+            PrintUtil.printToConsole("Connection closed.");
         }
     }
 
-    public void sendToServer(String command) throws IOException {
-        writer.write(command);
-        writer.newLine();
-        writer.flush();
-        System.out.println("Sent to server: " + command);
+    public void sendCommand(String command) {
+        try{
+            writer.write(command);
+            writer.newLine();
+            writer.flush();
+            PrintUtil.printToConsole("Sent to server: " + command);
+        }
+        catch (IOException e){
+            PrintUtil.printToConsole(e.getMessage());
+        }
     }
 
-    public String receiveFromServer() throws IOException {
-        String response = reader.readLine();
-        System.out.println("Received from server: " + response);
+    public String receiveCommand() {
+        String response = null;
+        try {
+            response = reader.readLine();
+        } catch (IOException e) {
+            PrintUtil.printToConsole(e.getMessage());
+        }
+        PrintUtil.printToConsole("Received from server: " + response);
         return response;
     }
 

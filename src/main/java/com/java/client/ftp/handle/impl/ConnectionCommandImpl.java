@@ -1,8 +1,10 @@
 package com.java.client.ftp.handle.impl;
 
+import com.java.client.ftp.system.Const;
 import com.java.client.ftp.system.FTPClient;
 import com.java.client.ftp.enums.CommandToServer;
 import com.java.client.ftp.handle.ConnectionCommand;
+import com.java.client.ftp.util.PrintUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -15,9 +17,13 @@ public class ConnectionCommandImpl implements ConnectionCommand {
     @Override
     public void openConnection(String serverAddress, Integer serverPort) {
         try {
+            if (serverAddress == null || serverAddress.isEmpty() || serverPort == null) {
+                serverAddress = Const.FTP_ADDRESS;
+                serverPort = Const.FTP_PORT;
+            }
             ftpClient.connect(serverAddress, serverPort);
         } catch (Exception e) {
-            System.out.println("Error while connecting: " + e.getMessage());
+            PrintUtil.printToConsole("Error while connecting: " + e.getMessage());
         }
     }
 
@@ -26,7 +32,7 @@ public class ConnectionCommandImpl implements ConnectionCommand {
         try {
             ftpClient.close();
         } catch (Exception e) {
-            System.out.println("Error while closing connection: " + e.getMessage());
+            PrintUtil.printToConsole("Error while closing connection: " + e.getMessage());
         }
     }
 
@@ -38,10 +44,10 @@ public class ConnectionCommandImpl implements ConnectionCommand {
     @Override
     public void bye() {
         try {
-            ftpClient.sendToServer(CommandToServer.QUIT.name());
+            ftpClient.sendCommand(CommandToServer.QUIT.name());
             closeConnection();
         } catch (Exception e) {
-            System.out.println("Error while sending 'QUIT' command: " + e.getMessage());
+            PrintUtil.printToConsole("Error while sending 'QUIT' command: " + e.getMessage());
         }
     }
 

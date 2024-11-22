@@ -1,6 +1,7 @@
 package com.java.client.ftp.router;
 import com.java.client.ftp.enums.CommandOfClient;
 import com.java.client.ftp.handle.*;
+import com.java.client.ftp.util.PrintUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -17,10 +18,10 @@ public class RouterImpl implements Router {
 
     @Override
     public void routeCommand(String commandString) {
-        String[] commandParts = commandString.split(",");
+        String[] commandParts = commandString.split(" ");
         CommandOfClient command = processCommandString(commandParts[0].trim());
         if (command == null) {
-            System.out.println("Invalid command: " + commandParts[0]);
+            PrintUtil.printToConsole("Invalid command: " + commandParts[0]);
             return;
         }
         String[] remainingParts = getRemainingParts(commandParts);
@@ -76,10 +77,10 @@ public class RouterImpl implements Router {
                 commonCommand.listDetailAndStore(remainingParts[0], remainingParts[1]);
                 break;
             case LS:
-                commonCommand.list(remainingParts[0]);
+                commonCommand.listName(remainingParts[0]);
                 break;
             case MLS:
-                commonCommand.listAndStore(remainingParts[0], remainingParts[1]);
+                commonCommand.listNameAndStore(remainingParts[0], remainingParts[1]);
                 break;
             case RENAME:
                 commonCommand.rename(remainingParts[0], remainingParts[1]);

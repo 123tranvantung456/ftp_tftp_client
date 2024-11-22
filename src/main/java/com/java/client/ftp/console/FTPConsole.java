@@ -24,7 +24,6 @@ public class FTPConsole {
                 System.out.println("Exiting FTP Console.");
                 break;
             }
-
             router.routeCommand(commandString);
         }
         scanner.close();
