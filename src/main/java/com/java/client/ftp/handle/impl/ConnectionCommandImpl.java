@@ -1,5 +1,6 @@
 package com.java.client.ftp.handle.impl;
 
+import com.java.client.ftp.handle.AuthCommand;
 import com.java.client.ftp.system.Const;
 import com.java.client.ftp.system.FTPClient;
 import com.java.client.ftp.enums.CommandToServer;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 public class ConnectionCommandImpl implements ConnectionCommand {
 
     private final FTPClient ftpClient;
+    private final AuthCommand authCommand;
 
     @Override
     public void openConnection(String serverAddress, Integer serverPort) {
@@ -22,6 +24,7 @@ public class ConnectionCommandImpl implements ConnectionCommand {
                 serverPort = Const.FTP_PORT;
             }
             ftpClient.connect(serverAddress, serverPort);
+            authCommand.login();
         } catch (Exception e) {
             PrintUtil.printToConsole("Error while connecting: " + e.getMessage());
         }

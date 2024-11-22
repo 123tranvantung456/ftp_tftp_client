@@ -101,7 +101,6 @@ public class CommonCommandImpl implements CommonCommand {
         } catch (IOException e) {
             System.err.println("Error retrieving file list: " + e.getMessage());
         }
-
         return fileList;
     }
 }

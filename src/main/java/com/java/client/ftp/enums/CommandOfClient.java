@@ -60,6 +60,6 @@ public enum CommandOfClient {
     REMOTEHELP,
 
     //2. Extended FTP
-    CONNECT,
+    CONNECT
     ;
 }

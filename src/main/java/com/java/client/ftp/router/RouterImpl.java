@@ -14,6 +14,7 @@ public class RouterImpl implements Router {
     private final CommonCommand commonCommand;
     private final DataTransferCommand dataTransferCommand;
     private final ConnectionCommand connectionCommand;
+    private final AuthCommand authCommand;
 //    private final LocalCommand localCommand;
 
     @Override
@@ -113,10 +114,9 @@ public class RouterImpl implements Router {
 
             // remote help
             case REMOTEHELP:
-
                 break;
 
-            // extend
+            // connect
             case CONNECT:
                 connectionCommand.openConnection(remainingParts[0], Integer.parseInt(remainingParts[1]));
                 break;
