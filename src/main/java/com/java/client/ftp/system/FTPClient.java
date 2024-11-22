@@ -1,12 +1,16 @@
 package com.java.client.ftp.system;
 
 import com.java.client.ftp.util.PrintUtil;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import java.io.*;
 import java.net.*;
 
 @Component
+@RequiredArgsConstructor
 public class FTPClient {
+
+    private final ClientConfig clientConfig;
 
     private Socket socket;
     private BufferedReader reader;
@@ -31,7 +35,9 @@ public class FTPClient {
             writer.write(command);
             writer.newLine();
             writer.flush();
-            PrintUtil.printToConsole("Sent to server: " + command);
+            if (clientConfig.isDebug()) {
+                PrintUtil.printToConsole("======> " + command);
+            }
         }
         catch (IOException e){
             PrintUtil.printToConsole(e.getMessage());
@@ -45,7 +51,7 @@ public class FTPClient {
         } catch (IOException e) {
             PrintUtil.printToConsole(e.getMessage());
         }
-        PrintUtil.printToConsole("Received from server: " + response);
+        PrintUtil.printToConsole(response);
         return response;
     }
 

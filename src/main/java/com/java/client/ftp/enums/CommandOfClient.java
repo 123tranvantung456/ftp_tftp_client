@@ -29,6 +29,7 @@ public enum CommandOfClient {
 
     // local command
     LCD,
+    DEBUG,
     LITERAL,
     PROMPT,
     GLOB,

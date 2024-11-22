@@ -14,4 +14,5 @@ public class ClientConfig {
     private TransferType transferType = TransferType.ASCII;
     private TransferMode transferModeDefault = TransferMode.ACTIVE;
     private boolean isLogin = false;
+    private boolean isDebug = false;
 }

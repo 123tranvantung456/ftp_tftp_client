@@ -24,12 +24,7 @@ public class DataTransferCommandImpl implements DataTransferCommand {
         ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.TYPE, "A"));
         String response = ftpClient.receiveCommand();
         ResponseCode responseCode = ResponseCodeUtil.getResponseCode(response);
-
-        if (responseCode == ResponseCode.OK) {
-            PrintUtil.printToConsole("Switched to ASCII mode.");
-        } else {
-            PrintUtil.printToConsole("Failed to switch to ASCII mode. Response: " + response);
-        }
+        // if fail => set lai o local
     }
 
     @Override
@@ -38,12 +33,6 @@ public class DataTransferCommandImpl implements DataTransferCommand {
         ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.TYPE, "I"));
         String response = ftpClient.receiveCommand();
         ResponseCode responseCode = ResponseCodeUtil.getResponseCode(response);
-
-        if (responseCode == ResponseCode.OK) {
-            PrintUtil.printToConsole("Switched to Binary mode.");
-        } else {
-            PrintUtil.printToConsole("Failed to switch to Binary mode. Response: " + response);
-        }
-
+        // if fail => set lai o local
     }
 }

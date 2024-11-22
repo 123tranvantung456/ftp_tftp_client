@@ -14,8 +14,7 @@ public class RouterImpl implements Router {
     private final CommonCommand commonCommand;
     private final DataTransferCommand dataTransferCommand;
     private final ConnectionCommand connectionCommand;
-    private final AuthCommand authCommand;
-//    private final LocalCommand localCommand;
+    private final LocalCommand localCommand;
 
     @Override
     public void routeCommand(String commandString) {
@@ -121,6 +120,8 @@ public class RouterImpl implements Router {
                 connectionCommand.openConnection(remainingParts[0], Integer.parseInt(remainingParts[1]));
                 break;
 
+            case DEBUG:
+                localCommand.debug();
 //            // extend
 //            case QUOTE:
 //

@@ -50,6 +50,7 @@ public class CommonCommandImpl implements CommonCommand {
             result = listNameHandle(remoteDirectory);
             transferCommand.setBinaryMode();
         }
+        ftpClient.receiveCommand();
         return result;
     }
 
@@ -70,13 +71,15 @@ public class CommonCommandImpl implements CommonCommand {
             transferModeCommand.passiveMode();
         }
         ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.NLST, remoteDirectory));
-        String response = ftpClient.receiveCommand();
-        PrintUtil.printToConsole(response);
+        ftpClient.receiveCommand();
         List<String> fileList = listNameFromServer();
         StringBuilder fileListString = new StringBuilder();
         if (!fileList.isEmpty()) {
             for (String fileName : fileList) {
                 fileListString.append(fileName).append("\n");
+            }
+            if (!fileListString.isEmpty() && fileListString.charAt(fileListString.length() - 1) == '\n') {
+                fileListString.deleteCharAt(fileListString.length() - 1);
             }
         } else {
             fileListString.append("No files found in the directory.");

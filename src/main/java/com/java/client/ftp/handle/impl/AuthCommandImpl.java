@@ -12,24 +12,27 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Scanner;
-
 @Component
 @RequiredArgsConstructor
 public class AuthCommandImpl implements AuthCommand {
     private final FTPClient ftpClient;
     private final ClientConfig clientConfig;
+    private final Scanner scanner;
 
     @Override
     public void login() {
-        Scanner scanner = new Scanner(System.in);
         String username = scanner.nextLine().trim();
         ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.USER, username));
-        String response = ftpClient.receiveCommand();
-        PrintUtil.printToConsole(response);
-        if (ResponseCodeUtil.getResponseCode(response) == ResponseCode.NEED_PASSWORD){
+        String responseWithUsername = ftpClient.receiveCommand();
+//        PrintUtil.printToConsole(responseWithUsername);
+        if (ResponseCodeUtil.getResponseCode(responseWithUsername) == ResponseCode.NEED_PASSWORD){
             String password = scanner.nextLine().trim();
             ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.PASS, password));
         }
-        scanner.close();
+        String responseWithPassword = ftpClient.receiveCommand();
+        if(ResponseCodeUtil.getResponseCode(responseWithPassword) == ResponseCode.USER_LOGGED_IN){
+            clientConfig.setLogin(true);
+        }
+//        PrintUtil.printToConsole(responseWithPassword);
     }
 }

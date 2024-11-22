@@ -32,8 +32,7 @@ public class TransferModeCommandImpl implements TransferModeCommand {
             ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.EPRT, extendPortArg));
             Socket dataSocket = socketData.getServerSocket().accept();
             socketData.setSocket(dataSocket);
-            String response = ftpClient.receiveCommand();
-            PrintUtil.printToConsole(response);
+            ftpClient.receiveCommand();
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
@@ -44,7 +43,6 @@ public class TransferModeCommandImpl implements TransferModeCommand {
         try {
             ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.PASV));
             String response = ftpClient.receiveCommand();
-            PrintUtil.printToConsole(response);
             ResponseCode responseCode = ResponseCodeUtil.getResponseCode(response);
             if(responseCode == ResponseCode.USER_EXIT_ACKNOWLEDGED) {
                 String[] parts = response.split("\\(")[1].split("\\)")[0].split(",");

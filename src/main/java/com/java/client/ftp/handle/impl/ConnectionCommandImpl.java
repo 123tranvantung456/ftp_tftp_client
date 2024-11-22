@@ -24,6 +24,7 @@ public class ConnectionCommandImpl implements ConnectionCommand {
                 serverPort = Const.FTP_PORT;
             }
             ftpClient.connect(serverAddress, serverPort);
+            ftpClient.receiveCommand();
             authCommand.login();
         } catch (Exception e) {
             PrintUtil.printToConsole("Error while connecting: " + e.getMessage());

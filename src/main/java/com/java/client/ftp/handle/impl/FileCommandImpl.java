@@ -22,6 +22,7 @@ import java.io.*;
 @Component
 @RequiredArgsConstructor
 public class FileCommandImpl implements FileCommand {
+
     private final FTPClient ftpClient;
     private final ClientConfig clientConfig;
     private final SocketData socketData;
@@ -36,21 +37,22 @@ public class FileCommandImpl implements FileCommand {
             PrintUtil.printToConsole(file + " does not exist");
         }
         else {
-            ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.STOR, filename));
             if (clientConfig.getTransferModeDefault() == TransferMode.ACTIVE){
                 transferModeCommand.activeMode();
             }
             else if (clientConfig.getTransferModeDefault() == TransferMode.PASSIVE){
                 transferModeCommand.passiveMode();
             }
+            ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.STOR, filename));
             if (clientConfig.getTransferType() == TransferType.ASCII){
                 putWithAsciiMode(file);
             }
             else if(clientConfig.getTransferType() == TransferType.BINARY){
                 putWithBinaryMode(file);
             }
-//            socketData.closeSockets();
             socketData.checkConnection();
+            socketData.closeSockets();
+            ftpClient.receiveCommand();
         }
     }
 
@@ -64,8 +66,6 @@ public class FileCommandImpl implements FileCommand {
     @Override
     public void get(String filename) {
         File file = new File(clientConfig.getCurrentDirectory() + "/" + filename);
-        ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.RETR, filename));
-
         if (clientConfig.getTransferModeDefault() == TransferMode.ACTIVE){
             transferModeCommand.activeMode();
         }
@@ -73,12 +73,16 @@ public class FileCommandImpl implements FileCommand {
             transferModeCommand.passiveMode();
         }
 
+        ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.RETR, filename));
+
         if (clientConfig.getTransferType() == TransferType.ASCII){
             getWithAsciiMode(file);
         }
         else if(clientConfig.getTransferType() == TransferType.BINARY){
             getWithBinaryMode(file);
         }
+        socketData.checkConnection();
+        ftpClient.receiveCommand();
     }
 
     @Override
@@ -179,7 +183,7 @@ public class FileCommandImpl implements FileCommand {
 
     private void putWithAsciiMode(File file){
         if (ResponseCodeUtil.getResponseCode(ftpClient.receiveCommand()) != ResponseCode.FILE_STARTING_TRANSFER){
-            PrintUtil.printToConsole("failed");
+            PrintUtil.printToConsole(ftpClient.receiveCommand());
             return;
         }
         BufferedReader rin = null;
@@ -188,13 +192,12 @@ public class FileCommandImpl implements FileCommand {
         try {
             rin = new BufferedReader(new FileReader(file));
             rout = new PrintWriter(socketData.getSocket().getOutputStream(), true);
-
         }
         catch (IOException e) {
-            PrintUtil.printToConsole(e.getMessage());
+            PrintUtil.printErrorToConsole(e.getMessage());
         }
         catch (Exception e) {
-            PrintUtil.printToConsole("err: " + e.getMessage());
+            PrintUtil.printErrorToConsole("err: " + e.getMessage());
         }
 
         String s;
@@ -204,14 +207,14 @@ public class FileCommandImpl implements FileCommand {
                 rout.println(s);
             }
         } catch (IOException e) {
-            PrintUtil.printToConsole(e.getMessage());
+            PrintUtil.printErrorToConsole(e.getMessage());
         }
 
         try {
             rout.close();
             rin.close();
         } catch (IOException e) {
-            PrintUtil.printToConsole(e.getMessage());
+            PrintUtil.printErrorToConsole(e.getMessage());
         }
     }
 
@@ -228,10 +231,10 @@ public class FileCommandImpl implements FileCommand {
             fin = new BufferedInputStream(new FileInputStream(file));
         }
         catch (IOException e) {
-            PrintUtil.printToConsole(e.getMessage());
+            PrintUtil.printErrorToConsole(e.getMessage());
         }
         catch (Exception e) {
-            PrintUtil.printToConsole("err: " + e.getMessage());
+            PrintUtil.printErrorToConsole(e.getMessage());
         }
 
         byte[] buf = new byte[1024];
@@ -241,13 +244,13 @@ public class FileCommandImpl implements FileCommand {
                 fout.write(buf, 0, l);
             }
         } catch (IOException e) {
-            PrintUtil.printToConsole(e.getMessage());
+            PrintUtil.printErrorToConsole(e.getMessage());
         }
         try {
             fin.close();
             fout.close();
         } catch (IOException e) {
-            PrintUtil.printToConsole(e.getMessage());
+            PrintUtil.printErrorToConsole(e.getMessage());
         }
     }
 
@@ -263,10 +266,10 @@ public class FileCommandImpl implements FileCommand {
             rout = new PrintWriter(new FileOutputStream(file), true);
         }
         catch (IOException e) {
-            PrintUtil.printToConsole(e.getMessage());
+            PrintUtil.printErrorToConsole(e.getMessage());
         }
         catch (Exception e) {
-            PrintUtil.printToConsole("err: " + e.getMessage());
+            PrintUtil.printErrorToConsole("err: " + e.getMessage());
         }
         try {
             String s = "";
@@ -276,7 +279,7 @@ public class FileCommandImpl implements FileCommand {
                 }
             }
         } catch (IOException e) {
-            PrintUtil.printToConsole(e.getMessage());
+            PrintUtil.printErrorToConsole(e.getMessage());
         }
         try {
             if (rout != null) {
@@ -284,7 +287,7 @@ public class FileCommandImpl implements FileCommand {
             }
             rin.close();
         } catch (IOException e) {
-            PrintUtil.printToConsole(e.getMessage());
+            PrintUtil.printErrorToConsole(e.getMessage());
         }
     }
 
@@ -300,10 +303,10 @@ public class FileCommandImpl implements FileCommand {
             fin = new BufferedInputStream(socketData.getSocket().getInputStream());
         }
         catch (IOException e) {
-            PrintUtil.printToConsole(e.getMessage());
+            PrintUtil.printErrorToConsole(e.getMessage());
         }
         catch (Exception e) {
-            PrintUtil.printToConsole("err: " + e.getMessage());
+            PrintUtil.printErrorToConsole("err: " + e.getMessage());
         }
 
         byte[] buf = new byte[1024];
@@ -315,7 +318,7 @@ public class FileCommandImpl implements FileCommand {
                 }
             }
         } catch (IOException e) {
-            PrintUtil.printToConsole("err: " + e.getMessage());
+            PrintUtil.printErrorToConsole(e.getMessage());
         }
         try {
             fin.close();
@@ -323,7 +326,7 @@ public class FileCommandImpl implements FileCommand {
                 fout.close();
             }
         } catch (IOException e) {
-            PrintUtil.printToConsole("err: " + e.getMessage());
+            PrintUtil.printErrorToConsole(e.getMessage());
         }
     }
 }

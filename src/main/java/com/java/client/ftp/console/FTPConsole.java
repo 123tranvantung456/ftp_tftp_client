@@ -8,11 +8,10 @@ import java.util.Scanner;
 @Component
 @RequiredArgsConstructor
 public class FTPConsole {
-
     private final Router router;
+    private final Scanner scanner;
 
     public void start() {
-        Scanner scanner = new Scanner(System.in);
         String commandString;
 
         System.out.println("FTP Console is running... Type 'exit' to quit.");
@@ -26,7 +25,5 @@ public class FTPConsole {
             }
             router.routeCommand(commandString);
         }
-        scanner.close();
     }
-
 }
