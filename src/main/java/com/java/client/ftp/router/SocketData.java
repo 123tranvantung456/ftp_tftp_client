@@ -17,14 +17,14 @@ public class SocketData {
 
     public void checkConnection() {
         if (socket != null && socket.isConnected() && !socket.isClosed()) {
-            System.out.println("Socket is connected and open.");
+            System.err.println("Socket is connected and open.");
         } else {
-            System.out.println("Socket is not connected or closed.");
+            System.err.println("Socket is not connected or closed.");
         }
         if (serverSocket != null && !serverSocket.isClosed()) {
-            System.out.println("Server socket is open.");
+            System.err.println("Server socket is open.");
         } else {
-            System.out.println("Server socket is closed.");
+            System.err.println("Server socket is closed.");
         }
     }
 

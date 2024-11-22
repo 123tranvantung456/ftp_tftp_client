@@ -24,7 +24,6 @@ public class AuthCommandImpl implements AuthCommand {
         String username = scanner.nextLine().trim();
         ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.USER, username));
         String responseWithUsername = ftpClient.receiveCommand();
-//        PrintUtil.printToConsole(responseWithUsername);
         if (ResponseCodeUtil.getResponseCode(responseWithUsername) == ResponseCode.NEED_PASSWORD){
             String password = scanner.nextLine().trim();
             ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.PASS, password));
@@ -33,6 +32,5 @@ public class AuthCommandImpl implements AuthCommand {
         if(ResponseCodeUtil.getResponseCode(responseWithPassword) == ResponseCode.USER_LOGGED_IN){
             clientConfig.setLogin(true);
         }
-//        PrintUtil.printToConsole(responseWithPassword);
     }
 }
