@@ -6,7 +6,6 @@ import com.java.client.ftp.enums.CommandToServer;
 import com.java.client.ftp.enums.ResponseCode;
 import com.java.client.ftp.enums.TransferType;
 import com.java.client.ftp.handle.DataTransferCommand;
-import com.java.client.ftp.util.PrintUtil;
 import com.java.client.ftp.util.ResponseCodeUtil;
 import com.java.client.ftp.util.SendToServerUtil;
 import lombok.RequiredArgsConstructor;

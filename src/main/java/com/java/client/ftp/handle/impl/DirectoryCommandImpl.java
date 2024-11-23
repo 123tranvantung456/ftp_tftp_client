@@ -3,7 +3,6 @@ package com.java.client.ftp.handle.impl;
 import com.java.client.ftp.enums.CommandToServer;
 import com.java.client.ftp.handle.DirectoryCommand;
 import com.java.client.ftp.system.FTPClient;
-import com.java.client.ftp.util.PrintUtil;
 import com.java.client.ftp.util.SendToServerUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

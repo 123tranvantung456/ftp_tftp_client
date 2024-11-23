@@ -2,7 +2,6 @@ package com.java.client.ftp.handle.impl;
 
 import com.java.client.ftp.enums.CommandToServer;
 import com.java.client.ftp.enums.ResponseCode;
-import com.java.client.ftp.enums.TransferMode;
 import com.java.client.ftp.enums.TransferType;
 import com.java.client.ftp.handle.CommonCommand;
 import com.java.client.ftp.handle.FileCommand;
@@ -13,6 +12,7 @@ import com.java.client.ftp.system.FTPClient;
 import com.java.client.ftp.util.PrintUtil;
 import com.java.client.ftp.util.ResponseCodeUtil;
 import com.java.client.ftp.util.SendToServerUtil;
+import com.java.client.ftp.util.TransferModeUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -37,20 +37,7 @@ public class FileCommandImpl implements FileCommand {
             PrintUtil.printToConsole(file + " does not exist");
         }
         else {
-            if (clientConfig.getTransferModeDefault() == TransferMode.ACTIVE){
-                transferModeCommand.activeMode();
-            }
-            else if (clientConfig.getTransferModeDefault() == TransferMode.PASSIVE){
-                transferModeCommand.passiveMode();
-            }
-            ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.STOR, filename));
-            if (clientConfig.getTransferType() == TransferType.ASCII){
-                putWithAsciiMode(file);
-            }
-            else if(clientConfig.getTransferType() == TransferType.BINARY){
-                putWithBinaryMode(file);
-            }
-            socketData.checkConnection();
+            handleUploadToServer(filename, file, CommandToServer.STOR);
             socketData.closeSockets();
             ftpClient.receiveCommand();
         }
@@ -65,23 +52,8 @@ public class FileCommandImpl implements FileCommand {
 
     @Override
     public void get(String filename) {
-        File file = new File(clientConfig.getCurrentDirectory() + "/" + filename);
-        if (clientConfig.getTransferModeDefault() == TransferMode.ACTIVE){
-            transferModeCommand.activeMode();
-        }
-        else if (clientConfig.getTransferModeDefault() == TransferMode.PASSIVE){
-            transferModeCommand.passiveMode();
-        }
-
-        ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.RETR, filename));
-
-        if (clientConfig.getTransferType() == TransferType.ASCII){
-            getWithAsciiMode(file);
-        }
-        else if(clientConfig.getTransferType() == TransferType.BINARY){
-            getWithBinaryMode(file);
-        }
-        socketData.checkConnection();
+        handelDownFromServer(filename, SendToServerUtil.message(CommandToServer.RETR, filename));
+        socketData.closeSockets();
         ftpClient.receiveCommand();
     }
 
@@ -98,6 +70,7 @@ public class FileCommandImpl implements FileCommand {
     @Override
     public void delete(String remoteFilePath) {
         ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.DELE, remoteFilePath));
+        socketData.closeSockets();
         ftpClient.receiveCommand();
     }
 
@@ -118,43 +91,15 @@ public class FileCommandImpl implements FileCommand {
             PrintUtil.printToConsole(file + " does not exist");
         }
         else {
-            if (clientConfig.getTransferModeDefault() == TransferMode.ACTIVE){
-                transferModeCommand.activeMode();
-            }
-            else if (clientConfig.getTransferModeDefault() == TransferMode.PASSIVE){
-                transferModeCommand.passiveMode();
-            }
-            ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.STOR, remoteFilePath));
-            if (clientConfig.getTransferType() == TransferType.ASCII){
-                putWithAsciiMode(file);
-            }
-            else if(clientConfig.getTransferType() == TransferType.BINARY){
-                putWithBinaryMode(file);
-            }
-//            socketData.closeSockets();
-            socketData.checkConnection();
+            handleUploadToServer(remoteFilePath, file, CommandToServer.STOR);
+            socketData.closeSockets();
             ftpClient.receiveCommand();
         }
     }
 
     @Override
     public void receive(String remoteFilePath, String localFilePath) {
-        File file = new File(clientConfig.getCurrentDirectory() + "/" + localFilePath);
-
-        if (clientConfig.getTransferModeDefault() == TransferMode.ACTIVE){
-            transferModeCommand.activeMode();
-        }
-        else if (clientConfig.getTransferModeDefault() == TransferMode.PASSIVE){
-            transferModeCommand.passiveMode();
-        }
-        ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.RETR, remoteFilePath));
-        if (clientConfig.getTransferType() == TransferType.ASCII){
-            getWithAsciiMode(file);
-        }
-        else if(clientConfig.getTransferType() == TransferType.BINARY){
-            getWithBinaryMode(file);
-        }
-        socketData.checkConnection();
+        handelDownFromServer(localFilePath, SendToServerUtil.message(CommandToServer.RETR, remoteFilePath));
         ftpClient.receiveCommand();
     }
 
@@ -165,23 +110,32 @@ public class FileCommandImpl implements FileCommand {
             PrintUtil.printToConsole(file + " does not exist");
         }
         else {
-            if (clientConfig.getTransferModeDefault() == TransferMode.ACTIVE){
-                transferModeCommand.activeMode();
-            }
-            else if (clientConfig.getTransferModeDefault() == TransferMode.PASSIVE){
-                transferModeCommand.passiveMode();
-            }
-            ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.APPE, remoteFilePath));
-
-            if (clientConfig.getTransferType() == TransferType.ASCII){
-                putWithAsciiMode(file);
-            }
-            else if(clientConfig.getTransferType() == TransferType.BINARY){
-                putWithBinaryMode(file);
-            }
-//            socketData.closeSockets();
-            socketData.checkConnection();
+            handleUploadToServer(remoteFilePath, file, CommandToServer.APPE);
+            socketData.closeSockets();
             ftpClient.receiveCommand();
+        }
+    }
+
+    private void handleUploadToServer(String filename, File file, CommandToServer commandToServer) {
+        TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand);
+        ftpClient.sendCommand(SendToServerUtil.message(commandToServer, filename));
+        if (clientConfig.getTransferType() == TransferType.ASCII){
+            putWithAsciiMode(file);
+        }
+        else if(clientConfig.getTransferType() == TransferType.BINARY){
+            putWithBinaryMode(file);
+        }
+    }
+
+    private void handelDownFromServer(String filename, String messageToServer) {
+        File file = new File(clientConfig.getCurrentDirectory() + "/" + filename);
+        TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand);
+        ftpClient.sendCommand(messageToServer);
+        if (clientConfig.getTransferType() == TransferType.ASCII){
+            getWithAsciiMode(file);
+        }
+        else if(clientConfig.getTransferType() == TransferType.BINARY){
+            getWithBinaryMode(file);
         }
     }
 
