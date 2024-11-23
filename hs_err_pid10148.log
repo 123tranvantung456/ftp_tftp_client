@@ -1,0 +1,241 @@
+#
+# There is insufficient memory for the Java Runtime Environment to continue.
+# Native memory allocation (mmap) failed to map 132120576 bytes. Error detail: G1 virtual space
+# Possible reasons:
+#   The system is out of physical RAM or swap space
+#   This process is running with CompressedOops enabled, and the Java Heap may be blocking the growth of the native heap
+# Possible solutions:
+#   Reduce memory load on the system
+#   Increase physical memory or swap space
+#   Check if swap backing store is full
+#   Decrease Java heap size (-Xmx/-Xms)
+#   Decrease number of Java threads
+#   Decrease Java thread stack sizes (-Xss)
+#   Set larger code cache with -XX:ReservedCodeCacheSize=
+#   JVM is running with Unscaled Compressed Oops mode in which the Java heap is
+#     placed in the first 4GB address space. The Java Heap base address is the
+#     maximum limit for the native heap growth. Please use -XX:HeapBaseMinAddress
+#     to set the Java Heap base and to place the Java Heap above 4GB virtual address.
+# This output file may be truncated or incomplete.
+#
+#  Out of Memory Error (os_windows.cpp:3631), pid=10148, tid=3732
+#
+# JRE version:  (22.0.2+9) (build )
+# Java VM: OpenJDK 64-Bit Server VM (22.0.2+9-70, mixed mode, sharing, tiered, compressed oops, compressed class ptrs, g1 gc, windows-amd64)
+# No core dump will be written. Minidumps are not enabled by default on client versions of Windows
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: -javaagent:D:\IntelliJ IDEA 2024.1.4\lib\idea_rt.jar=54058:D:\IntelliJ IDEA 2024.1.4\bin -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8 com.java.Main
+
+Host: Intel(R) Core(TM) i5-10300H CPU @ 2.50GHz, 8 cores, 7G,  Windows 11 , 64 bit Build 22621 (10.0.22621.4391)
+Time: Sat Nov 23 16:24:49 2024 SE Asia Standard Time elapsed time: 0.015009 seconds (0d 0h 0m 0s)
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x00000238dd0f24d0):  JavaThread "Unknown thread" [_thread_in_vm, id=3732, stack(0x000000bdb0500000,0x000000bdb0600000) (1024K)]
+
+Stack: [0x000000bdb0500000,0x000000bdb0600000]
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [jvm.dll+0x6e26e9]  (no source info available)
+V  [jvm.dll+0x875753]  (no source info available)
+V  [jvm.dll+0x877b7e]  (no source info available)
+V  [jvm.dll+0x878253]  (no source info available)
+V  [jvm.dll+0x27fc86]  (no source info available)
+V  [jvm.dll+0x6ded85]  (no source info available)
+V  [jvm.dll+0x6d388a]  (no source info available)
+V  [jvm.dll+0x358b8a]  (no source info available)
+V  [jvm.dll+0x3610b6]  (no source info available)
+V  [jvm.dll+0x3b419e]  (no source info available)
+V  [jvm.dll+0x3b4448]  (no source info available)
+V  [jvm.dll+0x32c5ec]  (no source info available)
+V  [jvm.dll+0x32d258]  (no source info available)
+V  [jvm.dll+0x83d5ac]  (no source info available)
+V  [jvm.dll+0x3c10d1]  (no source info available)
+V  [jvm.dll+0x8264cc]  (no source info available)
+V  [jvm.dll+0x45bd5e]  (no source info available)
+V  [jvm.dll+0x45dbe1]  (no source info available)
+C  [jli.dll+0x52a3]  (no source info available)
+C  [ucrtbase.dll+0x29333]  (no source info available)
+C  [KERNEL32.DLL+0x1259d]  (no source info available)
+C  [ntdll.dll+0x5af38]  (no source info available)
+
+
+---------------  P R O C E S S  ---------------
+
+Threads class SMR info:
+_java_thread_list=0x00007ffa00f0c1c8, length=0, elements={
+}
+
+Java Threads: ( => current thread )
+Total: 0
+
+Other Threads:
+  0x00000238dd148150 WorkerThread "GC Thread#0"                     [id=22388, stack(0x000000bdb0600000,0x000000bdb0700000) (1024K)]
+  0x00000238dd155320 ConcurrentGCThread "G1 Main Marker"            [id=6720, stack(0x000000bdb0700000,0x000000bdb0800000) (1024K)]
+  0x00000238dd1564e0 WorkerThread "G1 Conc#0"                       [id=6880, stack(0x000000bdb0800000,0x000000bdb0900000) (1024K)]
+
+[error occurred during error reporting (printing all threads), id 0xc0000005, EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ffa0065f517]
+VM state: not at safepoint (not fully initialized)
+
+VM Mutex/Monitor currently owned by a thread:  ([mutex/lock_event])
+[0x00007ffa00f8cc80] Heap_lock - owner thread: 0x00000238dd0f24d0
+
+Heap address: 0x0000000082800000, size: 2008 MB, Compressed Oops mode: 32-bit
+
+CDS archive(s) mapped at: [0x0000000000000000-0x0000000000000000-0x0000000000000000), size 0, SharedBaseAddress: 0x0000000800000000, ArchiveRelocationMode: 1.
+Narrow klass base: 0x0000000000000000, Narrow klass shift: 0, Narrow klass range: 0x0
+
+GC Precious Log:
+ CardTable entry size: 512
+ Card Set container configuration: InlinePtr #cards 5 size 8 Array Of Cards #cards 12 size 40 Howl #buckets 4 coarsen threshold 1843 Howl Bitmap #cards 512 size 80 coarsen threshold 460 Card regions per heap region 1 cards per card region 2048
+
+Heap:
+ garbage-first heap   total reserved 2056192K, committed 0K, used 0K [0x0000000082800000, 0x0000000100000000)
+  region size 1024K, 0 young (0K), 0 survivors (0K)
+
+[error occurred during error reporting (printing heap information), id 0xc0000005, EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ffa00a5e869]
+GC Heap History (0 events):
+No events
+
+Dll operation events (1 events):
+Event: 0.011 Loaded shared library C:\Users\ASUS\.jdks\openjdk-22.0.2\bin\java.dll
+
+Deoptimization events (0 events):
+No events
+
+Classes loaded (0 events):
+No events
+
+Classes unloaded (0 events):
+No events
+
+Classes redefined (0 events):
+No events
+
+Internal exceptions (0 events):
+No events
+
+ZGC Phase Switch (0 events):
+No events
+
+VM Operations (0 events):
+No events
+
+Memory protections (0 events):
+No events
+
+Nmethod flushes (0 events):
+No events
+
+Events (0 events):
+No events
+
+
+Dynamic libraries:
+0x00007ff6fe910000 - 0x00007ff6fe91e000 	C:\Users\ASUS\.jdks\openjdk-22.0.2\bin\java.exe
+0x00007ffa6d530000 - 0x00007ffa6d747000 	C:\WINDOWS\SYSTEM32\ntdll.dll
+0x00007ffa6bf80000 - 0x00007ffa6c044000 	C:\WINDOWS\System32\KERNEL32.DLL
+0x00007ffa6ac40000 - 0x00007ffa6aff9000 	C:\WINDOWS\System32\KERNELBASE.dll
+0x00007ffa6a9b0000 - 0x00007ffa6aac1000 	C:\WINDOWS\System32\ucrtbase.dll
+0x00007ffa53130000 - 0x00007ffa5314b000 	C:\Users\ASUS\.jdks\openjdk-22.0.2\bin\VCRUNTIME140.dll
+0x00007ffa58d00000 - 0x00007ffa58d17000 	C:\Users\ASUS\.jdks\openjdk-22.0.2\bin\jli.dll
+0x00007ffa6d1e0000 - 0x00007ffa6d38e000 	C:\WINDOWS\System32\USER32.dll
+0x00007ffa56370000 - 0x00007ffa56602000 	C:\WINDOWS\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.22621.4391_none_2715d37f73803e96\COMCTL32.dll
+0x00007ffa6a980000 - 0x00007ffa6a9a6000 	C:\WINDOWS\System32\win32u.dll
+0x00007ffa6cdf0000 - 0x00007ffa6ce97000 	C:\WINDOWS\System32\msvcrt.dll
+0x00007ffa6d060000 - 0x00007ffa6d089000 	C:\WINDOWS\System32\GDI32.dll
+0x00007ffa6a830000 - 0x00007ffa6a94b000 	C:\WINDOWS\System32\gdi32full.dll
+0x00007ffa6b130000 - 0x00007ffa6b1ca000 	C:\WINDOWS\System32\msvcp_win.dll
+0x00007ffa6d1a0000 - 0x00007ffa6d1d1000 	C:\WINDOWS\System32\IMM32.DLL
+0x00007ffa66170000 - 0x00007ffa6617c000 	C:\Users\ASUS\.jdks\openjdk-22.0.2\bin\vcruntime140_1.dll
+0x00007ffa57fe0000 - 0x00007ffa5806e000 	C:\Users\ASUS\.jdks\openjdk-22.0.2\bin\msvcp140.dll
+0x00007ffa00320000 - 0x00007ffa01069000 	C:\Users\ASUS\.jdks\openjdk-22.0.2\bin\server\jvm.dll
+0x00007ffa6cce0000 - 0x00007ffa6cd92000 	C:\WINDOWS\System32\ADVAPI32.dll
+0x00007ffa6b450000 - 0x00007ffa6b4f7000 	C:\WINDOWS\System32\sechost.dll
+0x00007ffa6a950000 - 0x00007ffa6a978000 	C:\WINDOWS\System32\bcrypt.dll
+0x00007ffa6cbc0000 - 0x00007ffa6ccd4000 	C:\WINDOWS\System32\RPCRT4.dll
+0x00007ffa6b3d0000 - 0x00007ffa6b441000 	C:\WINDOWS\System32\WS2_32.dll
+0x00007ffa696c0000 - 0x00007ffa6970d000 	C:\WINDOWS\SYSTEM32\POWRPROF.dll
+0x00007ffa64770000 - 0x00007ffa647a4000 	C:\WINDOWS\SYSTEM32\WINMM.dll
+0x00007ffa658c0000 - 0x00007ffa658ca000 	C:\WINDOWS\SYSTEM32\VERSION.dll
+0x00007ffa696a0000 - 0x00007ffa696b3000 	C:\WINDOWS\SYSTEM32\UMPDC.dll
+0x00007ffa69960000 - 0x00007ffa69978000 	C:\WINDOWS\SYSTEM32\kernel.appcore.dll
+0x00007ffa649e0000 - 0x00007ffa649ea000 	C:\Users\ASUS\.jdks\openjdk-22.0.2\bin\jimage.dll
+0x00007ffa67c10000 - 0x00007ffa67e42000 	C:\WINDOWS\SYSTEM32\DBGHELP.DLL
+0x00007ffa6bb90000 - 0x00007ffa6bf1f000 	C:\WINDOWS\System32\combase.dll
+0x00007ffa6c050000 - 0x00007ffa6c127000 	C:\WINDOWS\System32\OLEAUT32.dll
+0x00007ffa48650000 - 0x00007ffa48682000 	C:\WINDOWS\SYSTEM32\dbgcore.DLL
+0x00007ffa6b1d0000 - 0x00007ffa6b24b000 	C:\WINDOWS\System32\bcryptPrimitives.dll
+0x00007ffa57fd0000 - 0x00007ffa57fdf000 	C:\Users\ASUS\.jdks\openjdk-22.0.2\bin\instrument.dll
+0x00007ffa57fb0000 - 0x00007ffa57fce000 	C:\Users\ASUS\.jdks\openjdk-22.0.2\bin\java.dll
+0x00007ffa6c340000 - 0x00007ffa6cbb6000 	C:\WINDOWS\System32\SHELL32.dll
+0x00007ffa6c130000 - 0x00007ffa6c2d5000 	C:\WINDOWS\System32\ole32.dll
+
+dbghelp: loaded successfully - version: 4.0.5 - missing functions: none
+symbol engine: initialized successfully - sym options: 0x614 - pdb path: .;C:\Users\ASUS\.jdks\openjdk-22.0.2\bin;C:\WINDOWS\SYSTEM32;C:\WINDOWS\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.22621.4391_none_2715d37f73803e96;C:\Users\ASUS\.jdks\openjdk-22.0.2\bin\server
+
+VM Arguments:
+jvm_args: -javaagent:D:\IntelliJ IDEA 2024.1.4\lib\idea_rt.jar=54058:D:\IntelliJ IDEA 2024.1.4\bin -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8 
+java_command: com.java.Main
+java_class_path (initial): D:\PBL4\ftp_tftp-client\client\target\classes;C:\Users\ASUS\.m2\repository\org\springframework\spring-context\6.0.0\spring-context-6.0.0.jar;C:\Users\ASUS\.m2\repository\org\springframework\spring-aop\6.0.0\spring-aop-6.0.0.jar;C:\Users\ASUS\.m2\repository\org\springframework\spring-beans\6.0.0\spring-beans-6.0.0.jar;C:\Users\ASUS\.m2\repository\org\springframework\spring-core\6.0.0\spring-core-6.0.0.jar;C:\Users\ASUS\.m2\repository\org\springframework\spring-jcl\6.0.0\spring-jcl-6.0.0.jar;C:\Users\ASUS\.m2\repository\org\springframework\spring-expression\6.0.0\spring-expression-6.0.0.jar
+Launcher Type: SUN_STANDARD
+
+[Global flags]
+     intx CICompilerCount                          = 4                                         {product} {ergonomic}
+     uint ConcGCThreads                            = 2                                         {product} {ergonomic}
+     uint G1ConcRefinementThreads                  = 8                                         {product} {ergonomic}
+   size_t G1HeapRegionSize                         = 1048576                                   {product} {ergonomic}
+   size_t InitialHeapSize                          = 132120576                                 {product} {ergonomic}
+   size_t MarkStackSize                            = 4194304                                   {product} {ergonomic}
+   size_t MaxHeapSize                              = 2105540608                                {product} {ergonomic}
+   size_t MinHeapDeltaBytes                        = 1048576                                   {product} {ergonomic}
+   size_t MinHeapSize                              = 8388608                                   {product} {ergonomic}
+    uintx NonNMethodCodeHeapSize                   = 5839372                                {pd product} {ergonomic}
+    uintx NonProfiledCodeHeapSize                  = 122909434                              {pd product} {ergonomic}
+    uintx ProfiledCodeHeapSize                     = 122909434                              {pd product} {ergonomic}
+    uintx ReservedCodeCacheSize                    = 251658240                              {pd product} {ergonomic}
+     bool SegmentedCodeCache                       = true                                      {product} {ergonomic}
+   size_t SoftMaxHeapSize                          = 2105540608                             {manageable} {ergonomic}
+     bool UseCompressedOops                        = true                           {product lp64_product} {ergonomic}
+     bool UseG1GC                                  = true                                      {product} {ergonomic}
+     bool UseLargePagesIndividualAllocation        = false                                  {pd product} {ergonomic}
+
+Logging:
+Log output configuration:
+ #0: stdout all=warning uptime,level,tags foldmultilines=false
+ #1: stderr all=off uptime,level,tags foldmultilines=false
+
+Environment Variables:
+JAVA_HOME=C:\Program Files\Java\jdk-21
+PATH=C:\Program Files (x86)\VMware\VMware Workstation\bin\;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Program Files\Microsoft\jdk-11.0.12.7-hotspot\bin;C:\Program Files (x86)\Rockwell Software\RSCommon;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files (x86)\Microsoft SQL Server\160\Tools\Binn\;C:\Program Files\Microsoft SQL Server\160\Tools\Binn\;C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\;C:\Program Files\Microsoft SQL Server\160\DTS\Binn\;C:\Program Files\dotnet\;C:\Program Files\Microsoft SQL Server\150\Tools\Binn\;C:\Program Files\Azure Data Studio\bin;D:\Git\cmd;C:\Program Files\Java\jdk-21\bin;C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit\;C:\Program Files\TortoiseGit\bin;C:\Program Files\Cloudflare\Cloudflare WARP\;C:\Program Files\nodejs\;C:\Users\ASUS\AppData\Local\Microsoft\WindowsApps;C:\Program Files\Azure Data Studio\bin;E:\Microsoft VS Code\bin;C:\Users\ASUS\.dotnet\tools;C:\Program Files\Java\jdk-21\bin;C:\Users\ASUS\AppData\Roaming\npm
+USERNAME=ASUS
+OS=Windows_NT
+PROCESSOR_IDENTIFIER=Intel64 Family 6 Model 165 Stepping 2, GenuineIntel
+TMP=C:\Users\ASUS\AppData\Local\Temp
+TEMP=C:\Users\ASUS\AppData\Local\Temp
+
+
+
+
+Periodic native trim disabled
+
+---------------  S Y S T E M  ---------------
+
+OS:
+ Windows 11 , 64 bit Build 22621 (10.0.22621.4391)
+OS uptime: 2 days 5:41 hours
+
+CPU: total 8 (initial active 8) (4 cores per cpu, 2 threads per core) family 6 model 165 stepping 2 microcode 0xe0, cx8, cmov, fxsr, ht, mmx, 3dnowpref, sse, sse2, sse3, ssse3, sse4.1, sse4.2, popcnt, lzcnt, tsc, tscinvbit, avx, avx2, aes, erms, clmul, bmi1, bmi2, adx, fma, vzeroupper, clflush, clflushopt, rdtscp, f16c, pku
+Processor Information for all 8 processors :
+  Max Mhz: 2496, Current Mhz: 2496, Mhz Limit: 2496
+
+Memory: 4k page, system-wide physical 8029M (406M free)
+TotalPageFile size 27662M (AvailPageFile size 12M)
+current process WorkingSet (physical memory assigned to process): 12M, peak: 12M
+current process commit charge ("private bytes"): 60M, peak: 186M
+
+vm_info: OpenJDK 64-Bit Server VM (22.0.2+9-70) for windows-amd64 JRE (22.0.2+9-70), built on 2024-06-04T16:52:23Z by "mach5one" with MS VC++ 17.6 (VS2022)
+
+END.

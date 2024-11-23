@@ -58,4 +58,11 @@ public class FTPClient {
     public boolean isConnected() {
         return socket != null && socket.isConnected();
     }
+
+    public String getServerIpAddress() {
+        if (socket != null && socket.isConnected()) {
+            return socket.getInetAddress().getHostAddress();
+        }
+        return null;
+    }
 }
