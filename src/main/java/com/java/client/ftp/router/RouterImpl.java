@@ -1,7 +1,6 @@
 package com.java.client.ftp.router;
 import com.java.client.ftp.enums.CommandOfClient;
 import com.java.client.ftp.handle.*;
-import com.java.client.ftp.util.PrintUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -18,114 +17,132 @@ public class RouterImpl implements Router {
 
     @Override
     public void routeCommand(String commandString) {
-        String[] commandParts = commandString.split(" ");
-        CommandOfClient command = processCommandString(commandParts[0].trim());
-        if (command == null) {
-            PrintUtil.printToConsole("Invalid command: " + commandParts[0]);
-            return;
-        }
-        String[] remainingParts = getRemainingParts(commandParts);
-        switch (command) {
 
-            // file
-            case PUT:
-                fileCommand.put(remainingParts[0]);
-                break;
-            case MPUT:
-                fileCommand.multiPut(remainingParts);
-                break;
-            case GET:
-                fileCommand.get(remainingParts[0]);
-                break;
-            case MGET:
-                fileCommand.multiGet(remainingParts);
-                break;
-            case DELETE:
-                fileCommand.delete(remainingParts[0]);
-                break;
-            case MDELETE:
-                fileCommand.multiDelete(remainingParts);
-                break;
-            case SEND:
-                fileCommand.send(remainingParts[0], remainingParts[1]); // check sau
-                break;
-            case RECV:
-                fileCommand.receive(remainingParts[0], remainingParts[1]);
-                break;
-            case APPEND:
-                fileCommand.append(remainingParts[0], remainingParts[1]);
-                break;
+        try {
+            String[] commandParts = commandString.split(" ");
+            CommandOfClient command = processCommandString(commandParts[0].trim());
+            if (command == null) {
+                System.err.print("Invalid command: " + commandParts[0]);
+                return;
+            }
+            String[] remainingParts = getRemainingParts(commandParts);
+            switch (command) {
 
-            // folder
-            case MKDIR:
-                directoryCommand.makeDirectory(remainingParts[0]);
-                break;
-            case RMDIR:
-                directoryCommand.removeDirectory(remainingParts[0]);
-                break;
-            case CD:
-                directoryCommand.changeDirectory(remainingParts[0]);
-                break;
-            case PWD:
-                directoryCommand.printWorkingDirectory();
-                // common
-                break;
-            case DIR:
-                commonCommand.listDetail(remainingParts[0]);
-                break;
-            case MDIR:
-                commonCommand.listDetailAndStore(remainingParts[0], remainingParts[1]);
-                break;
-            case LS:
-                commonCommand.listName(remainingParts[0]);
-                break;
-            case MLS:
-                commonCommand.listNameAndStore(remainingParts[0], remainingParts[1]);
-                break;
-            case RENAME:
-                commonCommand.rename(remainingParts[0], remainingParts[1]);
-                break;
+                // file
+                case PUT:
+                    fileCommand.put(remainingParts[0]);
+                    break;
+                case MPUT:
+                    fileCommand.multiPut(remainingParts);
+                    break;
+                case GET:
+                    fileCommand.get(remainingParts[0]);
+                    break;
+                case MGET:
+                    fileCommand.multiGet(remainingParts);
+                    break;
+                case DELETE:
+                    fileCommand.delete(remainingParts[0]);
+                    break;
+                case MDELETE:
+                    fileCommand.multiDelete(remainingParts);
+                    break;
+                case SEND:
+                    fileCommand.send(remainingParts[0], remainingParts[1]); // check sau
+                    break;
+                case RECV:
+                    fileCommand.receive(remainingParts[0], remainingParts[1]);
+                    break;
+                case APPEND:
+                    fileCommand.append(remainingParts[0], remainingParts[1]);
+                    break;
 
-            // connection
-            case OPEN:
-                connectionCommand.openConnection(remainingParts[0], Integer.parseInt(remainingParts[1]));
-                break;
-            case CLOSE:
-                connectionCommand.closeConnection();
-                break;
-            case DISCONNECT:
-                connectionCommand.disconnect();
-                break;
-            case BYE:
-                connectionCommand.bye();
-                break;
-            case QUIT:
-                connectionCommand.quit();
-                break;
+                // folder
+                case MKDIR:
+                    directoryCommand.makeDirectory(remainingParts[0]);
+                    break;
+                case RMDIR:
+                    directoryCommand.removeDirectory(remainingParts[0]);
+                    break;
+                case CD:
+                    directoryCommand.changeDirectory(remainingParts[0]);
+                    break;
+                case PWD:
+                    directoryCommand.printWorkingDirectory();
+                    // common
+                    break;
+                case DIR:
+                    commonCommand.listDetail(remainingParts[0]);
+                    break;
+                case MDIR:
+                    commonCommand.listDetailAndStore(remainingParts[0], remainingParts[1]);
+                    break;
+                case LS:
+                    commonCommand.listName(remainingParts[0]);
+                    break;
+                case MLS:
+                    commonCommand.listNameAndStore(remainingParts[0], remainingParts[1]);
+                    break;
+                case RENAME:
+                    commonCommand.rename(remainingParts[0], remainingParts[1]);
+                    break;
 
-            // transfer
-            case ASCII:
-                dataTransferCommand.setAsciiMode();
-                break;
-            case BINARY:
-                dataTransferCommand.setBinaryMode();
-                break;
+                // connection
+                case OPEN:
+                    connectionCommand.openConnection(remainingParts[0], Integer.parseInt(remainingParts[1]));
+                    break;
+                case CLOSE:
+                    connectionCommand.closeConnection();
+                    break;
+                case DISCONNECT:
+                    connectionCommand.disconnect();
+                    break;
+                case BYE:
+                    connectionCommand.bye();
+                    break;
+                case QUIT:
+                    connectionCommand.quit();
+                    break;
 
-            // remote help
-            case REMOTEHELP:
-                break;
+                // transfer
+                case ASCII:
+                    dataTransferCommand.setAsciiMode();
+                    break;
+                case BINARY:
+                    dataTransferCommand.setBinaryMode();
+                    break;
 
-            // connect
-            case CONNECT:
-                connectionCommand.openConnection(remainingParts[0], Integer.parseInt(remainingParts[1]));
-                break;
+                // remote help
+                case REMOTEHELP:
+                    break;
 
-            case DEBUG:
-                localCommand.debug();
+                // connect
+                case FTP:
+                    if (remainingParts.length > 1) {
+                        connectionCommand.openConnection(remainingParts[0], Integer.parseInt(remainingParts[1]));
+                    }
+                    else {
+                        connectionCommand.openConnection(null, null);
+                    }
+                    break;
+
+                case DEBUG:
+                    localCommand.debug();
+                    break;
+                case ACTIVE:
+                    localCommand.active();
+                    break;
+                case PASSIVE:
+                    localCommand.passive();
+                    break;
+                case STATUS:
+                    localCommand.showStatus();
+                    break;
 //            // extend
 //            case QUOTE:
 //
 //                break;
+
 //            // local
 //            case LCD:
 //
@@ -154,6 +171,9 @@ public class RouterImpl implements Router {
 //            case HELP:
 //
 //                break;
+            }
+        }catch (Exception e) {
+            System.err.print("command error");
         }
     }
 

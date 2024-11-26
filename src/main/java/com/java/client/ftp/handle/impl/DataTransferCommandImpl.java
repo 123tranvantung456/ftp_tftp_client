@@ -19,19 +19,21 @@ public class DataTransferCommandImpl implements DataTransferCommand {
 
     @Override
     public void setAsciiMode() {
-        clientConfig.setTransferType(TransferType.ASCII);
         ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.TYPE, "A"));
         String response = ftpClient.receiveCommand();
         ResponseCode responseCode = ResponseCodeUtil.getResponseCode(response);
-        // if fail => set lai o local
+        if(responseCode == ResponseCode.OK) {
+            clientConfig.setTransferType(TransferType.ASCII);
+        }
     }
 
     @Override
     public void setBinaryMode() {
-        clientConfig.setTransferType(TransferType.BINARY);
         ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.TYPE, "I"));
         String response = ftpClient.receiveCommand();
         ResponseCode responseCode = ResponseCodeUtil.getResponseCode(response);
-        // if fail => set lai o local
+        if(responseCode == ResponseCode.OK) {
+            clientConfig.setTransferType(TransferType.BINARY);
+        }
     }
 }

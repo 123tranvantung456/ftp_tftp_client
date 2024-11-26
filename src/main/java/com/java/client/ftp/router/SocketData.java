@@ -32,12 +32,10 @@ public class SocketData {
         try {
             if (socket != null && !socket.isClosed()) {
                 socket.close();
-                System.out.println("Data socket closed.");
             }
 
             if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
-                System.out.println("Server socket closed.");
             }
 
         } catch (IOException e) {

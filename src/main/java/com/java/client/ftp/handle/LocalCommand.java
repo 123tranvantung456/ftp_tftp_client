@@ -2,6 +2,8 @@ package com.java.client.ftp.handle;
 
 public interface LocalCommand {
     void debug();
+    void active();
+    void passive();
     void changeLocalDirectory(String localDirectory);
     void sendLiteralCommand(String command);
     void togglePromptMode(boolean enable);

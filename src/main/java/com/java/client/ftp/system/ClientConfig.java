@@ -15,7 +15,7 @@ public class ClientConfig {
     private String currentDirectory = Const.DEFAULT_DIRECTORY;
     private TransferType transferType = TransferType.ASCII;
     private TransferMode transferModeDefault = TransferMode.ACTIVE;
-    private ActiveType activeTypeDefault = ActiveType.PORT;
+    private ActiveType activeTypeDefault = ActiveType.EPRT;
     private PassiveType passiveTypeDefault = PassiveType.EPSV;
     private boolean isLogin = false;
     private boolean isDebug = false;

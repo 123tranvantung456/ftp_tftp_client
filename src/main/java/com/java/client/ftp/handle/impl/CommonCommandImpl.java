@@ -1,7 +1,6 @@
 package com.java.client.ftp.handle.impl;
 
 import com.java.client.ftp.enums.CommandToServer;
-import com.java.client.ftp.enums.TransferMode;
 import com.java.client.ftp.enums.TransferType;
 import com.java.client.ftp.handle.CommonCommand;
 import com.java.client.ftp.handle.DataTransferCommand;
@@ -11,6 +10,7 @@ import com.java.client.ftp.system.ClientConfig;
 import com.java.client.ftp.system.FTPClient;
 import com.java.client.ftp.util.PrintUtil;
 import com.java.client.ftp.util.SendToServerUtil;
+import com.java.client.ftp.util.TransferModeUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -45,12 +45,13 @@ public class CommonCommandImpl implements CommonCommand {
         List<String> result = new ArrayList<>();
         if (clientConfig.getTransferType() == TransferType.ASCII) {
             result = listNameHandle(remoteDirectory);
+            ftpClient.receiveCommand();
         } else if (clientConfig.getTransferType() == TransferType.BINARY) {
             transferCommand.setAsciiMode();
             result = listNameHandle(remoteDirectory);
+            ftpClient.receiveCommand();
             transferCommand.setBinaryMode();
         }
-        ftpClient.receiveCommand();
         return result;
     }
 
@@ -65,13 +66,8 @@ public class CommonCommandImpl implements CommonCommand {
     }
 
     private List<String> listNameHandle(String remoteDirectory) {
-        if (clientConfig.getTransferModeDefault() == TransferMode.ACTIVE) {
-            transferModeCommand.activeMode();
-        } else if (clientConfig.getTransferModeDefault() == TransferMode.PASSIVE) {
-            transferModeCommand.passiveMode();
-        }
-        ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.NLST, remoteDirectory));
-        ftpClient.receiveCommand();
+        TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand,
+                SendToServerUtil.message(CommandToServer.NLST, remoteDirectory));
         List<String> fileList = listNameFromServer();
         StringBuilder fileListString = new StringBuilder();
         if (!fileList.isEmpty()) {
@@ -92,14 +88,12 @@ public class CommonCommandImpl implements CommonCommand {
         List<String> fileList = new ArrayList<>();
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(socketData.getSocket().getInputStream()));
-
             String line;
             while ((line = reader.readLine()) != null) {
                 if (!line.trim().isEmpty()) {
                     fileList.add(line.trim());
                 }
             }
-
             reader.close();
         } catch (IOException e) {
             System.err.println("Error retrieving file list: " + e.getMessage());

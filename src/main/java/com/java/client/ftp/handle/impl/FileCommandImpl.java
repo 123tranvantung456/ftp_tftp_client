@@ -1,7 +1,6 @@
 package com.java.client.ftp.handle.impl;
 
 import com.java.client.ftp.enums.CommandToServer;
-import com.java.client.ftp.enums.ResponseCode;
 import com.java.client.ftp.enums.TransferType;
 import com.java.client.ftp.handle.CommonCommand;
 import com.java.client.ftp.handle.FileCommand;
@@ -10,7 +9,6 @@ import com.java.client.ftp.router.SocketData;
 import com.java.client.ftp.system.ClientConfig;
 import com.java.client.ftp.system.FTPClient;
 import com.java.client.ftp.util.PrintUtil;
-import com.java.client.ftp.util.ResponseCodeUtil;
 import com.java.client.ftp.util.SendToServerUtil;
 import com.java.client.ftp.util.TransferModeUtil;
 import lombok.RequiredArgsConstructor;
@@ -70,7 +68,6 @@ public class FileCommandImpl implements FileCommand {
     @Override
     public void delete(String remoteFilePath) {
         ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.DELE, remoteFilePath));
-        socketData.closeSockets();
         ftpClient.receiveCommand();
     }
 
@@ -98,7 +95,7 @@ public class FileCommandImpl implements FileCommand {
     }
 
     @Override
-    public void receive(String remoteFilePath, String localFilePath) {
+    public void receive(String localFilePath, String remoteFilePath) {
         handelDownFromServer(localFilePath, SendToServerUtil.message(CommandToServer.RETR, remoteFilePath));
         ftpClient.receiveCommand();
     }
@@ -117,8 +114,7 @@ public class FileCommandImpl implements FileCommand {
     }
 
     private void handleUploadToServer(String filename, File file, CommandToServer commandToServer) {
-        TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand);
-        ftpClient.sendCommand(SendToServerUtil.message(commandToServer, filename));
+        TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand, SendToServerUtil.message(commandToServer, filename));
         if (clientConfig.getTransferType() == TransferType.ASCII){
             putWithAsciiMode(file);
         }
@@ -129,8 +125,7 @@ public class FileCommandImpl implements FileCommand {
 
     private void handelDownFromServer(String filename, String messageToServer) {
         File file = new File(clientConfig.getCurrentDirectory() + "/" + filename);
-        TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand);
-        ftpClient.sendCommand(messageToServer);
+        TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand, messageToServer);
         if (clientConfig.getTransferType() == TransferType.ASCII){
             getWithAsciiMode(file);
         }
@@ -140,10 +135,6 @@ public class FileCommandImpl implements FileCommand {
     }
 
     private void putWithAsciiMode(File file){
-        if (ResponseCodeUtil.getResponseCode(ftpClient.receiveCommand()) != ResponseCode.FILE_STARTING_TRANSFER){
-            PrintUtil.printToConsole(ftpClient.receiveCommand());
-            return;
-        }
         BufferedReader rin = null;
         PrintWriter rout = null;
 
@@ -177,10 +168,7 @@ public class FileCommandImpl implements FileCommand {
     }
 
     private void putWithBinaryMode(File file){
-        if (ResponseCodeUtil.getResponseCode(ftpClient.receiveCommand()) != ResponseCode.FILE_STARTING_TRANSFER){
-            PrintUtil.printToConsole("failed");
-            return;
-        }
+
         BufferedOutputStream fout = null;
         BufferedInputStream fin = null;
 
@@ -213,10 +201,7 @@ public class FileCommandImpl implements FileCommand {
     }
 
     private void getWithAsciiMode(File file) {
-        if (ResponseCodeUtil.getResponseCode(ftpClient.receiveCommand()) != ResponseCode.FILE_STARTING_TRANSFER){
-            PrintUtil.printToConsole("failed");
-            return;
-        }
+
         BufferedReader rin = null;
         PrintWriter rout = null;
         try {
@@ -250,10 +235,6 @@ public class FileCommandImpl implements FileCommand {
     }
 
     private void getWithBinaryMode(File file){
-        if (ResponseCodeUtil.getResponseCode(ftpClient.receiveCommand()) != ResponseCode.FILE_STARTING_TRANSFER){
-            PrintUtil.printToConsole("failed");
-            return;
-        }
         BufferedOutputStream fout = null;
         BufferedInputStream fin = null;
         try {

@@ -28,6 +28,8 @@ public enum CommandOfClient {
     RENAME,
 
     // local command
+    ACTIVE,
+    PASSIVE,
     LCD,
     DEBUG,
     LITERAL,
@@ -61,6 +63,6 @@ public enum CommandOfClient {
     REMOTEHELP,
 
     //2. Extended FTP
-    CONNECT
+    FTP
     ;
 }
