@@ -89,7 +89,7 @@ public class RouterImpl implements Router {
 
                 // connection
                 case OPEN:
-                    connectionCommand.openConnection(remainingParts[0], Integer.parseInt(remainingParts[1]));
+//                    connectionCommand.openConnection(remainingParts[0], Integer.parseInt(remainingParts[1]));
                     break;
                 case CLOSE:
                     connectionCommand.closeConnection();
@@ -119,10 +119,10 @@ public class RouterImpl implements Router {
                 // connect
                 case FTP:
                     if (remainingParts.length > 1) {
-                        connectionCommand.openConnection(remainingParts[0], Integer.parseInt(remainingParts[1]));
+//                        connectionCommand.openConnection(remainingParts[0], Integer.parseInt(remainingParts[1]));
                     }
                     else {
-                        connectionCommand.openConnection(null, null);
+//                        connectionCommand.openConnection(null, null);
                     }
                     break;
 
@@ -138,39 +138,8 @@ public class RouterImpl implements Router {
                 case STATUS:
                     localCommand.showStatus();
                     break;
-//            // extend
-//            case QUOTE:
-//
-//                break;
-
-//            // local
-//            case LCD:
-//
-//                break;
-//            case LITERAL:
-//
-//                break;
-//            case PROMPT:
-//
-//                break;
-//            case GLOB:
-//
-//                break;
-//            case TRACE:
-//
-//                break;
-//            case VERBOSE:
-//
-//                break;
-//            case STATUS:
-//
-//                break;
-//            case HASH:
-//
-//                break;
-//            case HELP:
-//
-//                break;
+                case LCD:
+                    localCommand.changeLocalDirectory(remainingParts[0]);
             }
         }catch (Exception e) {
             System.err.print("command error");

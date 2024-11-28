@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 @Getter
 public class ClientConfig {
     private String currentDirectory = Const.DEFAULT_DIRECTORY;
+    private String currentDirectoryInServer = Const.DEFAULT_DIRECTORY;
     private TransferType transferType = TransferType.ASCII;
     private TransferMode transferModeDefault = TransferMode.ACTIVE;
     private ActiveType activeTypeDefault = ActiveType.EPRT;

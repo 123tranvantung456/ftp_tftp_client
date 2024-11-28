@@ -1,6 +1,5 @@
 package com.java.client.ftp.handle.impl;
 
-import com.java.client.ftp.enums.ActiveType;
 import com.java.client.ftp.enums.TransferMode;
 import com.java.client.ftp.handle.LocalCommand;
 import com.java.client.ftp.system.ClientConfig;
@@ -32,7 +31,8 @@ public class LocalCommandImpl implements LocalCommand {
 
     @Override
     public void changeLocalDirectory(String localDirectory) {
-
+        clientConfig.setCurrentDirectory(localDirectory);
+        PrintUtil.printToConsole("change to current directory " + localDirectory);
     }
 
     @Override

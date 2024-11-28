@@ -17,15 +17,16 @@ public class ConnectionCommandImpl implements ConnectionCommand {
     private final AuthCommand authCommand;
 
     @Override
-    public void openConnection(String serverAddress, Integer serverPort) {
+    public void openConnection(String serverAddress, Integer serverPort, String username, String password) {
         try {
-            if (serverAddress == null || serverAddress.isEmpty() || serverPort == null) {
                 serverAddress = Const.FTP_ADDRESS;
                 serverPort = Const.FTP_PORT;
-            }
+                username = "tranvantung";
+                password = "hellotung";
+
             ftpClient.connect(serverAddress, serverPort);
             ftpClient.receiveCommand();
-            authCommand.login();
+            authCommand.login(username, password);
         } catch (Exception e) {
             PrintUtil.printToConsole("Error while connecting: " + e.getMessage());
         }

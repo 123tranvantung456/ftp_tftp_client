@@ -30,7 +30,7 @@ public class FileCommandImpl implements FileCommand {
 
     @Override
     public void put(String filename) {
-        File file = new File(clientConfig.getCurrentDirectory() + "/" + filename);
+        File file = new File(filename);
         if (!file.exists()) {
             PrintUtil.printToConsole(file + " does not exist");
         }
@@ -102,7 +102,7 @@ public class FileCommandImpl implements FileCommand {
 
     @Override
     public void append(String localFilePath, String remoteFilePath) {
-        File file = new File(clientConfig.getCurrentDirectory() + "/" + localFilePath);
+        File file = new File(localFilePath);
         if (!file.exists()) {
             PrintUtil.printToConsole(file + " does not exist");
         }
@@ -124,7 +124,7 @@ public class FileCommandImpl implements FileCommand {
     }
 
     private void handelDownFromServer(String filename, String messageToServer) {
-        File file = new File(clientConfig.getCurrentDirectory() + "/" + filename);
+        File file = new File(filename);
         TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand, messageToServer);
         if (clientConfig.getTransferType() == TransferType.ASCII){
             getWithAsciiMode(file);

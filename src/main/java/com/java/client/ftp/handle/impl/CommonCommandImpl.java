@@ -31,8 +31,8 @@ public class CommonCommandImpl implements CommonCommand {
     private final TransferModeCommand transferModeCommand;
 
     @Override
-    public void listDetail(String remoteDirectory) {
-
+    public List<String> listDetail(String remoteDirectory) {
+        return handle(remoteDirectory, CommandToServer.LIST);
     }
 
     @Override
@@ -42,13 +42,17 @@ public class CommonCommandImpl implements CommonCommand {
 
     @Override
     public List<String> listName(String remoteDirectory) {
+        return handle(remoteDirectory, CommandToServer.NLST);
+    }
+
+    private List<String> handle(String remoteDirectory, CommandToServer commandToServer) {
         List<String> result = new ArrayList<>();
         if (clientConfig.getTransferType() == TransferType.ASCII) {
-            result = listNameHandle(remoteDirectory);
+            result = listNameHandle(remoteDirectory, commandToServer);
             ftpClient.receiveCommand();
         } else if (clientConfig.getTransferType() == TransferType.BINARY) {
             transferCommand.setAsciiMode();
-            result = listNameHandle(remoteDirectory);
+            result = listNameHandle(remoteDirectory, commandToServer);
             ftpClient.receiveCommand();
             transferCommand.setBinaryMode();
         }
@@ -65,9 +69,9 @@ public class CommonCommandImpl implements CommonCommand {
 
     }
 
-    private List<String> listNameHandle(String remoteDirectory) {
+    private List<String> listNameHandle(String remoteDirectory, CommandToServer commandToServer) {
         TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand,
-                SendToServerUtil.message(CommandToServer.NLST, remoteDirectory));
+                SendToServerUtil.message(commandToServer, remoteDirectory));
         List<String> fileList = listNameFromServer();
         StringBuilder fileListString = new StringBuilder();
         if (!fileList.isEmpty()) {
