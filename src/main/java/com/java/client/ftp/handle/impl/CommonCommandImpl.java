@@ -66,8 +66,27 @@ public class CommonCommandImpl implements CommonCommand {
 
     @Override
     public void rename(String oldName, String newName) {
+        try {
 
+            ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.RNFR, oldName));
+            String response = ftpClient.receiveCommand();
+            if (!response.startsWith("350")) {
+                PrintUtil.printToConsole("Failed to start rename process: " + response);
+                return;
+            }
+
+            ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.RNTO, newName));
+            response = ftpClient.receiveCommand();
+            if (response.startsWith("250")) { // 250 là mã phản hồi thành công của RNTO
+                PrintUtil.printToConsole("File renamed successfully from '" + oldName + "' to '" + newName + "'.");
+            } else {
+                PrintUtil.printToConsole("Failed to rename file: " + response);
+            }
+        } catch (Exception e) {
+            PrintUtil.printToConsole("Error during rename operation: " + e.getMessage());
+        }
     }
+
 
     private List<String> listNameHandle(String remoteDirectory, CommandToServer commandToServer) {
         TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand,

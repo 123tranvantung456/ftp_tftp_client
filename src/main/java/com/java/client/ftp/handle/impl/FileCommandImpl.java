@@ -83,7 +83,7 @@ public class FileCommandImpl implements FileCommand {
 
     @Override
     public void send(String localFilePath, String remoteFilePath) {
-        File file = new File(clientConfig.getCurrentDirectory() + "/" + localFilePath);
+        File file = new File(localFilePath);
         if (!file.exists()) {
             PrintUtil.printToConsole(file + " does not exist");
         }
@@ -124,7 +124,14 @@ public class FileCommandImpl implements FileCommand {
     }
 
     private void handelDownFromServer(String filename, String messageToServer) {
-        File file = new File(filename);
+        String name = null;
+        if (filename.contains("/")){
+            name = filename.substring(filename.lastIndexOf('/') + 1);
+        }
+        else {
+            name = filename;
+        }
+        File file = new File("D:\\Dowloads\\" + name);
         TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand, messageToServer);
         if (clientConfig.getTransferType() == TransferType.ASCII){
             getWithAsciiMode(file);

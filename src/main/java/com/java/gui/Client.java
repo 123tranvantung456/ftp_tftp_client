@@ -41,6 +41,8 @@ public class Client extends JFrame {
     private JTree localTree, remoteTree;
     private JTable localTable, remoteTable;
     private JTextArea logArea;
+    private DefaultMutableTreeNode currentDefaultMutableTreeNodeInRemoteTree;
+    private Node currentNodeInRemoteTree;
 
     public Client() {
         setTitle("FTP Client");
@@ -174,8 +176,7 @@ public class Client extends JFrame {
             @Override
             public void treeWillExpand(javax.swing.event.TreeExpansionEvent event) throws javax.swing.tree.ExpandVetoException {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) event.getPath().getLastPathComponent();
-                    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                    if (node.getChildCount() == 1) {
+                    if (node.getChildCount() == 1 && node.getFirstChild().toString().equals("Loading...")) {
                     Node objNode = (Node) node.getUserObject();
                     node.removeAllChildren();
                     File file = new File(objNode.getPath());
@@ -339,7 +340,24 @@ public class Client extends JFrame {
                 }
             }
             if (protocol.equals("FTP")){
-                fileCommand.multiPut(filesToUpload.toArray(new String[0]));
+//                fileCommand.multiPut(filesToUpload.toArray(new String[0]));
+                for (String file : filesToUpload) {
+                    String fullPathToServer = currentNodeInRemoteTree.getPath();
+                    String name;
+                    if (file.contains("\\")){
+                        name = file.substring(file.lastIndexOf('\\') + 1);
+                    }
+                    else {
+                        name = file;
+                    }
+                    if (!fullPathToServer.isEmpty()){
+                        fullPathToServer += "/" + name;
+                    }
+                    else {
+                        fullPathToServer += name;
+                    }
+                    fileCommand.send(file, fullPathToServer);
+                }
             }
             else if (protocol.equals("TFTP")){
 
@@ -413,7 +431,16 @@ public class Client extends JFrame {
                     transferCommand.setAsciiMode();
                 }
             }
-            fileCommand.append(selectedFiles.get(0), remoteFile);
+
+            String fullPathToServer = currentNodeInRemoteTree.getPath();
+
+            if (!fullPathToServer.isEmpty()){
+                fullPathToServer += "/" + remoteFile;
+            }
+            else {
+                fullPathToServer += remoteFile;
+            }
+            fileCommand.append(selectedFiles.get(0), fullPathToServer);
             appendDialog.dispose();
         });
 
@@ -492,12 +519,11 @@ public class Client extends JFrame {
             @Override
             public void treeWillExpand(javax.swing.event.TreeExpansionEvent event) {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) event.getPath().getLastPathComponent();
-
+                currentNodeInRemoteTree = (Node)node.getUserObject();
+                currentDefaultMutableTreeNodeInRemoteTree = node;
                 // Kiểm tra nếu node có 1 con (và là node root có "Loading...") để bắt đầu load dữ liệu
                 if (node.getChildCount() == 1 && node.getFirstChild().toString().equals("Loading...")) {
                     // Lấy đường dẫn của node (ví dụ lấy thư mục gốc của remote files)
-                    String currentFolder = node.getUserObject().toString();
-
                     // Xóa node "Loading..." và bắt đầu load thư mục
                     node.removeAllChildren();
 
@@ -512,7 +538,9 @@ public class Client extends JFrame {
 
             @Override
             public void treeWillCollapse(javax.swing.event.TreeExpansionEvent event) {
-                // Không làm gì khi người dùng gập cây lại
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) event.getPath().getLastPathComponent();
+                currentNodeInRemoteTree = (Node)node.getUserObject();
+                currentDefaultMutableTreeNodeInRemoteTree = node;
             }
         });
 
@@ -604,6 +632,8 @@ public void mouseClicked(MouseEvent e) {
         return folderNames; // Trả về danh sách thư mục
     }
 
+
+    // remote table
     private JTable createRemoteTable() {
         String[] columnNames = {"Name", "Size", "Type", "Last Modified"}; // Không có cột Path
         DefaultTableModel model = new DefaultTableModel(columnNames, 0);
@@ -651,8 +681,9 @@ public void mouseClicked(MouseEvent e) {
                     }
 
                     // Cập nhật trạng thái menu
-                    downloadItem.setEnabled(!hasFolderSelected);
+                    downloadItem.setEnabled(!hasFolderSelected && selectedRows.length >= 1);
                     renameItem.setEnabled(selectedRows.length == 1);
+                    deleteItem.setEnabled(selectedRows.length >= 1);
 
                     // Hiển thị menu chuột phải
                     popupMenu.show(table, e.getX(), e.getY());
@@ -704,25 +735,20 @@ public void mouseClicked(MouseEvent e) {
                 return;
             }
 
-            DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) selectedPath.getLastPathComponent();
-            String parentFolderPath = ((Node)selectedNode.getUserObject()).getPath(); // Giả định tên thư mục lưu trong UserObject
-
-
-
-            // Tạo đường dẫn đầy đủ cho thư mục mới
-            String fullPath = parentFolderPath;
-            if (!fullPath.isEmpty()){
-                fullPath += "/" + filesToDownload.get(0);
+            for (String file : filesToDownload) {
+                // Tạo đường dẫn đầy đủ cho thư mục mới
+                String fullPath = currentNodeInRemoteTree.getPath();
+                if (!fullPath.isEmpty()){
+                    fullPath += "/" + file;
+                }
+                else {
+                    fullPath += file;
+                }
+                fileCommand.get(fullPath);
+                System.out.println("dowloading Files: " +fullPath);
+                System.out.println("Protocol: " + protocol);
+                System.out.println("Type: " + type);
             }
-            else {
-                fullPath += filesToDownload.get(0);
-            }
-
-            System.out.println("dowloading Files: " +fullPath);
-            System.out.println("Protocol: " + protocol);
-            System.out.println("Type: " + type);
-
-
 
             downloadDialog.dispose();
         });
@@ -743,44 +769,71 @@ public void mouseClicked(MouseEvent e) {
             return;
         }
 
-        // Tạo danh sách các file được chọn
-        java.util.List<String> filesToDelete = new java.util.ArrayList<>();
-        for (int row : selectedRows) {
-            String fileName = (String) table.getValueAt(row, 0);
-            filesToDelete.add(fileName);
-        }
-
         // Hiển thị xác nhận xóa
         int confirm = JOptionPane.showConfirmDialog(
                 null,
-                "Are you sure you want to delete " + filesToDelete.size() + " file(s)?",
+                "Are you sure you want to delete " + selectedRows.length + " file(s)?",
                 "Confirm Delete",
                 JOptionPane.YES_NO_OPTION
         );
 
         if (confirm == JOptionPane.YES_OPTION) {
+            TreePath selectedPath = remoteTree.getSelectionPath();
+            if (selectedPath == null) {
+                JOptionPane.showMessageDialog(null, "Please select a folder in the tree!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            for (int row : selectedRows) {
+                String fullPath = currentNodeInRemoteTree.getPath();
+                if (!fullPath.isEmpty()){
+                    fullPath += "/" + table.getValueAt(row, 0);
+                }
+                else {
+                    fullPath += table.getValueAt(row, 0);
+                }
+                String type = (String) table.getValueAt(row, 2);
+                if(type.equals("File")){
+                    fileCommand.delete(fullPath);
+                }
+                else if(type.equals("Folder")){
+                    directoryCommand.removeDirectory(fullPath);
+                }
+            }
+
             // Xóa file khỏi model (giả lập xóa file)
             DefaultTableModel model = (DefaultTableModel) table.getModel();
             for (int i = selectedRows.length - 1; i >= 0; i--) {
                 model.removeRow(selectedRows[i]);
             }
 
-            // In danh sách file đã xóa
-            System.out.println("Deleted files:");
-            for (String file : filesToDelete) {
-                System.out.println("- " + file);
-            }
 
-            JOptionPane.showMessageDialog(null, "Deleted " + filesToDelete.size() + " file(s).", "Success", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Deleted " + selectedRows.length + " file(s).", "Success", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
     private void handleRenameFile(JTable table, int rowIndex){
         String oldName = (String) table.getValueAt(rowIndex, 0);
         String newName = JOptionPane.showInputDialog(table, "new name:", oldName);
+        String fullPathOld = currentNodeInRemoteTree.getPath();
+        if (!fullPathOld.isEmpty()){
+            fullPathOld += "/" + oldName;
+        }
+        else {
+            fullPathOld += oldName;
+        }
+
+        String fullPathNew = currentNodeInRemoteTree.getPath();
+        if (!fullPathNew.isEmpty()){
+            fullPathNew += "/" + newName;
+        }
+        else {
+            fullPathNew += newName;
+        }
         if (newName != null && !newName.trim().isEmpty()) {
             table.setValueAt(newName, rowIndex, 0);
 //            JOptionPane.showMessageDialog(null, "Renamed " + oldName + " to " + newName);
+            commonCommand.rename(fullPathOld, fullPathNew);
         }
     }
 
@@ -807,11 +860,13 @@ public void mouseClicked(MouseEvent e) {
             return;
         }
 
-        DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) selectedPath.getLastPathComponent();
-        String parentFolderPath = ((Node)selectedNode.getUserObject()).getPath(); // Giả định tên thư mục lưu trong UserObject
-
-        // Tạo đường dẫn đầy đủ cho thư mục mới
-        String fullPath = parentFolderPath + "/" + folderName;
+        String fullPath = currentNodeInRemoteTree.getPath();
+        if (!fullPath.isEmpty()){
+            fullPath += "/" + folderName;
+        }
+        else {
+            fullPath += folderName;
+        }
 
         // Gọi lệnh tạo thư mục
         try {
@@ -837,8 +892,8 @@ public void mouseClicked(MouseEvent e) {
                 .build();
         DefaultMutableTreeNode newFolderNode = new DefaultMutableTreeNode(newNode);
         newFolderNode.add(new DefaultMutableTreeNode(loading));
-        selectedNode.add(newFolderNode);
-        treeModel.reload(selectedNode); // Làm mới cây để hiển thị nút mới
+        currentDefaultMutableTreeNodeInRemoteTree.add(newFolderNode);
+        treeModel.reload(currentDefaultMutableTreeNodeInRemoteTree); // Làm mới cây để hiển thị nút mới
 
         // In thông tin tạo thư mục ra console
         System.out.println("New folder created at: " + fullPath);
@@ -880,7 +935,24 @@ public void mouseClicked(MouseEvent e) {
                 fileUpload[i++] = file.getAbsolutePath();
             }
 
-            fileCommand.multiPut(fileUpload);
+            for (String file : fileUpload) {
+                String fullPathToServer = currentNodeInRemoteTree.getPath();
+                String name;
+                if (file.contains("\\")){
+                    name = file.substring(file.lastIndexOf('\\') + 1);
+                }
+                else {
+                    name = file;
+                }
+                if (!fullPathToServer.isEmpty()){
+                    fullPathToServer += "/" + name;
+                }
+                else {
+                    fullPathToServer += name;
+                }
+                fileCommand.send(file, fullPathToServer);
+            }
+//            fileCommand.multiPut(fileUpload);
 
             // Optionally, you can add these files to the table
             DefaultTableModel model = (DefaultTableModel) table.getModel();
@@ -925,4 +997,9 @@ public void mouseClicked(MouseEvent e) {
         return tableData;
     }
 
+    // LOG
+    private void prependText(String message) {
+        String currentText = logArea.getText(); // Lấy nội dung hiện tại
+        logArea.setText(message + "\n" + currentText); // Ghi nội dung mới lên đầu
+    }
 }
