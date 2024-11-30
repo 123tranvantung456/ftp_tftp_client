@@ -42,6 +42,7 @@ public class Client extends JFrame {
     private JTable localTable, remoteTable;
     private JTextArea logArea;
     private DefaultMutableTreeNode currentDefaultMutableTreeNodeInRemoteTree;
+    private DefaultMutableTreeNode currentDefaultMutableTreeNodeInLocalTree;
     private Node currentNodeInRemoteTree;
 
     public Client() {
@@ -160,7 +161,7 @@ public class Client extends JFrame {
                 DefaultMutableTreeNode driveNode = new DefaultMutableTreeNode(
                         nodeTemp
                 );
-                Node loadingNode =  Node.builder()
+                Node loadingNode = Node.builder()
                         .name("Loading...")
                         .build();
                 driveNode.add(new DefaultMutableTreeNode(loadingNode)); // Placeholder để tải lười
@@ -176,18 +177,20 @@ public class Client extends JFrame {
             @Override
             public void treeWillExpand(javax.swing.event.TreeExpansionEvent event) throws javax.swing.tree.ExpandVetoException {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) event.getPath().getLastPathComponent();
-                    if (node.getChildCount() == 1 && node.getFirstChild().toString().equals("Loading...")) {
+                currentDefaultMutableTreeNodeInLocalTree = node;
+                if (node.getChildCount() == 1 && node.getFirstChild().toString().equals("Loading...")) {
                     Node objNode = (Node) node.getUserObject();
                     node.removeAllChildren();
                     File file = new File(objNode.getPath());
-                        lazyLoaLocal(node, file);
+                    lazyLoaLocal(node, file);
                     ((DefaultTreeModel) tree.getModel()).reload(node);
                 }
             }
 
             @Override
             public void treeWillCollapse(javax.swing.event.TreeExpansionEvent event) throws javax.swing.tree.ExpandVetoException {
-                // Xử lý sự kiện thu gọn nếu cần
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) event.getPath().getLastPathComponent();
+                currentDefaultMutableTreeNodeInLocalTree = node;
             }
         });
 
@@ -219,12 +222,12 @@ public class Client extends JFrame {
             for (File f : files) {
                 Node node = Node.builder()
                         .name(f.getName())
-                        .path(((Node)parentNode.getUserObject()).getPath() + f.getName() + "\\")
+                        .path(((Node) parentNode.getUserObject()).getPath() + f.getName() + "\\")
                         .build();
                 DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(
                         node
                 );
-                Node loadingNode =  Node.builder()
+                Node loadingNode = Node.builder()
                         .name("Loading...")
                         .build();
                 childNode.add(new DefaultMutableTreeNode(
@@ -234,6 +237,7 @@ public class Client extends JFrame {
             }
         }
     }
+
 
     // local table
     private JTable createLocalTable() {
@@ -293,7 +297,7 @@ public class Client extends JFrame {
         return table;
     }
 
-    private  void showUploadForm(JTable table) {
+    private void showUploadForm(JTable table) {
         JDialog uploadDialog = new JDialog((Frame) null, "Upload", true);
         uploadDialog.setLayout(null);
 
@@ -325,43 +329,41 @@ public class Client extends JFrame {
         okButton.addActionListener(e -> {
             String protocol = (String) protocolComboBox.getSelectedItem();
             String type = (String) typeComboBox.getSelectedItem();
-            java.util.List<String> filesToUpload = getSelectedFilesFromLocalTable(table, false);
-            System.out.println("Uploading Files: " + String.join(", ", filesToUpload));
-            System.out.println("Protocol: " + protocol);
-            System.out.println("Type: " + type);
+            int[] filesToUpload = getSelectedFilesFromLocalTable(table);
+
             assert protocol != null;
             assert type != null;
-            if (!clientConfig.getTransferType().name().equals(type.toUpperCase())){
+            if (!clientConfig.getTransferType().name().equals(type.toUpperCase())) {
                 if (type.equals("Binary")) {
                     transferCommand.setBinaryMode();
-                }
-                else if (type.equals("Ascii")) {
+                } else if (type.equals("Ascii")) {
                     transferCommand.setAsciiMode();
                 }
             }
-            if (protocol.equals("FTP")){
 //                fileCommand.multiPut(filesToUpload.toArray(new String[0]));
-                for (String file : filesToUpload) {
-                    String fullPathToServer = currentNodeInRemoteTree.getPath();
-                    String name;
-                    if (file.contains("\\")){
-                        name = file.substring(file.lastIndexOf('\\') + 1);
-                    }
-                    else {
-                        name = file;
-                    }
-                    if (!fullPathToServer.isEmpty()){
-                        fullPathToServer += "/" + name;
-                    }
-                    else {
-                        fullPathToServer += name;
-                    }
+            for (int row : filesToUpload) {
+                String file = (String) table.getValueAt(row, 4);
+                String fullPathToServer = currentNodeInRemoteTree.getPath();
+                String name;
+                if (file.contains("\\")) {
+                    name = file.substring(file.lastIndexOf('\\') + 1);
+                } else {
+                    name = file;
+                }
+                if (!fullPathToServer.isEmpty()) {
+                    fullPathToServer += "/" + name;
+                } else {
+                    fullPathToServer += name;
+                }
+                if (protocol.equals("FTP")) {
                     fileCommand.send(file, fullPathToServer);
+                    // if success : ghi log
+                } else if (protocol.equals("TFTP")) {
+
                 }
             }
-            else if (protocol.equals("TFTP")){
-
-            }
+            java.util.List<String> response = commonCommand.listDetail(currentNodeInRemoteTree.getPath());
+            updateRemoteTable(remoteTable, processListFileAndFolder(response));
             uploadDialog.dispose();
         });
 
@@ -374,7 +376,7 @@ public class Client extends JFrame {
         uploadDialog.setVisible(true);
     }
 
-    private  void showAppendForm(JTable table) {
+    private void showAppendForm(JTable table) {
         JDialog appendDialog = new JDialog((Frame) null, "Append", true);
         appendDialog.setLayout(null);
 
@@ -406,41 +408,37 @@ public class Client extends JFrame {
         okButton.addActionListener(e -> {
             String remoteFile = remoteFileField.getText();
             String type = (String) typeComboBox.getSelectedItem();
-            java.util.List<String> selectedFiles = getSelectedFilesFromLocalTable(table, false);
+            int[] selectedFiles = getSelectedFilesFromLocalTable(table);
 
             if (remoteFile.isEmpty()) {
                 JOptionPane.showMessageDialog(appendDialog, "Remote file path cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            if (selectedFiles.isEmpty()) {
+            if (selectedFiles.length == 0) {
                 JOptionPane.showMessageDialog(appendDialog, "No file selected from the table.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // In thông tin
-            System.out.println("Appending to Remote File: " + remoteFile);
-            System.out.println("Selected File(s): " + String.join(", ", selectedFiles));
-            System.out.println("Type: " + type);
-
-            if (!clientConfig.getTransferType().name().equals(type.toUpperCase())){
+            if (!clientConfig.getTransferType().name().equals(type.toUpperCase())) {
                 if (type.equals("Binary")) {
                     transferCommand.setBinaryMode();
-                }
-                else if (type.equals("Ascii")) {
+                } else if (type.equals("Ascii")) {
                     transferCommand.setAsciiMode();
                 }
             }
 
             String fullPathToServer = currentNodeInRemoteTree.getPath();
 
-            if (!fullPathToServer.isEmpty()){
+            if (!fullPathToServer.isEmpty()) {
                 fullPathToServer += "/" + remoteFile;
-            }
-            else {
+            } else {
                 fullPathToServer += remoteFile;
             }
-            fileCommand.append(selectedFiles.get(0), fullPathToServer);
+            fileCommand.append((String) table.getValueAt(selectedFiles[0], 4), fullPathToServer);
+            // if success : log
+            java.util.List<String> response = commonCommand.listDetail(currentNodeInRemoteTree.getPath());
+            updateRemoteTable(remoteTable, processListFileAndFolder(response));
             appendDialog.dispose();
         });
 
@@ -453,21 +451,13 @@ public class Client extends JFrame {
         appendDialog.setVisible(true);
     }
 
-    private  java.util.List<String> getSelectedFilesFromLocalTable(JTable table, boolean isDownload) {
-        java.util.List<String> selectedFiles = new java.util.ArrayList<>();
-        int[] selectedRows = table.getSelectedRows();
-
-        for (int row : selectedRows) {
-            String fileName = (String) table.getValueAt(row, isDownload ? 0 : 4);
-            selectedFiles.add(fileName);
-        }
-
-        return selectedFiles;
+    private int[] getSelectedFilesFromLocalTable(JTable table) {
+        return table.getSelectedRows();
     }
 
     private File getFileFromNode(DefaultMutableTreeNode node) {
         assert node != null;
-        Node nodeCrr = (Node)node.getUserObject();
+        Node nodeCrr = (Node) node.getUserObject();
         return new File(nodeCrr.getPath());
     }
 
@@ -519,7 +509,7 @@ public class Client extends JFrame {
             @Override
             public void treeWillExpand(javax.swing.event.TreeExpansionEvent event) {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) event.getPath().getLastPathComponent();
-                currentNodeInRemoteTree = (Node)node.getUserObject();
+                currentNodeInRemoteTree = (Node) node.getUserObject();
                 currentDefaultMutableTreeNodeInRemoteTree = node;
                 // Kiểm tra nếu node có 1 con (và là node root có "Loading...") để bắt đầu load dữ liệu
                 if (node.getChildCount() == 1 && node.getFirstChild().toString().equals("Loading...")) {
@@ -527,7 +517,7 @@ public class Client extends JFrame {
                     // Xóa node "Loading..." và bắt đầu load thư mục
                     node.removeAllChildren();
 
-                    java.util.List<String> response = commonCommand.listDetail(((Node)node.getUserObject()).getPath());
+                    java.util.List<String> response = commonCommand.listDetail(((Node) node.getUserObject()).getPath());
                     java.util.List<String> subFolderName = getFolderNames(response);
                     LazyLoadRemote(node, subFolderName);
 
@@ -539,7 +529,7 @@ public class Client extends JFrame {
             @Override
             public void treeWillCollapse(javax.swing.event.TreeExpansionEvent event) {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) event.getPath().getLastPathComponent();
-                currentNodeInRemoteTree = (Node)node.getUserObject();
+                currentNodeInRemoteTree = (Node) node.getUserObject();
                 currentDefaultMutableTreeNodeInRemoteTree = node;
             }
         });
@@ -549,36 +539,23 @@ public class Client extends JFrame {
 
     private void addRemoteTreeListeners() {
         remoteTree.addMouseListener(new MouseAdapter() {
-//            @Override
-//            public void mouseClicked(MouseEvent e) {
-//                if (e.getClickCount() == 2) {
-//                    DefaultMutableTreeNode selectedNode =
-//                            (DefaultMutableTreeNode) remoteTree.getLastSelectedPathComponent();
-//                    if (selectedNode != null) {
-//                        String selectedFolder = selectedNode.toString();
-//                        logArea.append("Remote folder selected: " + selectedFolder + "\n");
-//                        java.util.List<String> response = commonCommand.listDetail(((Node)selectedNode.getUserObject()).getPath());
-//                        updateRemoteTable(remoteTable, processListFileAndFolder(response));
-//                    }
-//                }
-//            }
-@Override
-public void mouseClicked(MouseEvent e) {
-    if (e.getClickCount() == 2) {
-        TreePath path = remoteTree.getPathForLocation(e.getX(), e.getY()); // Lấy node tại vị trí click
-        if (path != null) {
-            remoteTree.setSelectionPath(path); // Chọn node
-            DefaultMutableTreeNode selectedNode =
-                    (DefaultMutableTreeNode) remoteTree.getLastSelectedPathComponent();
-            if (selectedNode != null) {
-                String selectedFolder = selectedNode.toString();
-                logArea.append("Remote folder selected: " + selectedFolder + "\n");
-                java.util.List<String> response = commonCommand.listDetail(((Node) selectedNode.getUserObject()).getPath());
-                updateRemoteTable(remoteTable, processListFileAndFolder(response));
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    TreePath path = remoteTree.getPathForLocation(e.getX(), e.getY()); // Lấy node tại vị trí click
+                    if (path != null) {
+                        remoteTree.setSelectionPath(path); // Chọn node
+                        DefaultMutableTreeNode selectedNode =
+                                (DefaultMutableTreeNode) remoteTree.getLastSelectedPathComponent();
+                        if (selectedNode != null) {
+                            String selectedFolder = selectedNode.toString();
+                            logArea.append("Remote folder selected: " + selectedFolder + "\n");
+                            java.util.List<String> response = commonCommand.listDetail(((Node) selectedNode.getUserObject()).getPath());
+                            updateRemoteTable(remoteTable, processListFileAndFolder(response));
+                        }
+                    }
+                }
             }
-        }
-    }
-}
         });
     }
 
@@ -587,9 +564,8 @@ public void mouseClicked(MouseEvent e) {
         for (String folderName : subFolder) {
             String pathCurr = ((Node) node.getUserObject()).getPath();
             if (!pathCurr.equals("")) {
-                pathCurr += "/"+ folderName;
-            }
-            else {
+                pathCurr += "/" + folderName;
+            } else {
                 pathCurr += folderName;
             }
             Node File = Node.builder()
@@ -726,7 +702,7 @@ public void mouseClicked(MouseEvent e) {
         okButton.addActionListener(e -> {
             String protocol = (String) protocolComboBox.getSelectedItem();
             String type = (String) typeComboBox.getSelectedItem();
-            java.util.List<String> filesToDownload = getSelectedFilesFromLocalTable(table, true);
+            int[] filesToDownload = getSelectedFilesFromLocalTable(table);
 
             // Lấy nút hiện tại từ remoteTree
             TreePath selectedPath = remoteTree.getSelectionPath();
@@ -734,22 +710,30 @@ public void mouseClicked(MouseEvent e) {
                 JOptionPane.showMessageDialog(null, "Please select a folder in the tree!", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-
-            for (String file : filesToDownload) {
+            if (!clientConfig.getTransferType().name().equals(type.toUpperCase())) {
+                if (type.equals("Binary")) {
+                    transferCommand.setBinaryMode();
+                } else if (type.equals("Ascii")) {
+                    transferCommand.setAsciiMode();
+                }
+            }
+            for (int row : filesToDownload) {
+                String file = (String) table.getValueAt(row, 0);
                 // Tạo đường dẫn đầy đủ cho thư mục mới
                 String fullPath = currentNodeInRemoteTree.getPath();
-                if (!fullPath.isEmpty()){
+                if (!fullPath.isEmpty()) {
                     fullPath += "/" + file;
-                }
-                else {
+                } else {
                     fullPath += file;
                 }
-                fileCommand.get(fullPath);
-                System.out.println("dowloading Files: " +fullPath);
-                System.out.println("Protocol: " + protocol);
-                System.out.println("Type: " + type);
-            }
+                if (protocol.equals("FTP")) {
+                    fileCommand.get(fullPath);
+                    // if success : ghi log
+                } else if (protocol.equals("TFTP")) {
 
+                }
+            }
+            updateLocalTable(localTable, getFileFromNode(currentDefaultMutableTreeNodeInLocalTree));
             downloadDialog.dispose();
         });
 
@@ -784,56 +768,51 @@ public void mouseClicked(MouseEvent e) {
                 return;
             }
 
+            DefaultTableModel model = (DefaultTableModel) table.getModel();
             for (int row : selectedRows) {
                 String fullPath = currentNodeInRemoteTree.getPath();
-                if (!fullPath.isEmpty()){
+                if (!fullPath.isEmpty()) {
                     fullPath += "/" + table.getValueAt(row, 0);
-                }
-                else {
+                } else {
                     fullPath += table.getValueAt(row, 0);
                 }
                 String type = (String) table.getValueAt(row, 2);
-                if(type.equals("File")){
+                if (type.equals("File")) {
                     fileCommand.delete(fullPath);
-                }
-                else if(type.equals("Folder")){
+                    // check success =>
+                    model.removeRow(row);
+                } else if (type.equals("Folder")) {
                     directoryCommand.removeDirectory(fullPath);
+                    // check success =>
+                    model.removeRow(row);
                 }
             }
-
-            // Xóa file khỏi model (giả lập xóa file)
-            DefaultTableModel model = (DefaultTableModel) table.getModel();
-            for (int i = selectedRows.length - 1; i >= 0; i--) {
-                model.removeRow(selectedRows[i]);
-            }
-
-
-            JOptionPane.showMessageDialog(null, "Deleted " + selectedRows.length + " file(s).", "Success", JOptionPane.INFORMATION_MESSAGE);
+//            java.util.List<String> response = commonCommand.listDetail(currentNodeInRemoteTree.getPath());
+//            updateRemoteTable(remoteTable, processListFileAndFolder(response));
         }
     }
 
-    private void handleRenameFile(JTable table, int rowIndex){
+    private void handleRenameFile(JTable table, int rowIndex) {
         String oldName = (String) table.getValueAt(rowIndex, 0);
         String newName = JOptionPane.showInputDialog(table, "new name:", oldName);
         String fullPathOld = currentNodeInRemoteTree.getPath();
-        if (!fullPathOld.isEmpty()){
+        if (!fullPathOld.isEmpty()) {
             fullPathOld += "/" + oldName;
-        }
-        else {
+        } else {
             fullPathOld += oldName;
         }
 
         String fullPathNew = currentNodeInRemoteTree.getPath();
-        if (!fullPathNew.isEmpty()){
+        if (!fullPathNew.isEmpty()) {
             fullPathNew += "/" + newName;
-        }
-        else {
+        } else {
             fullPathNew += newName;
         }
         if (newName != null && !newName.trim().isEmpty()) {
             table.setValueAt(newName, rowIndex, 0);
-//            JOptionPane.showMessageDialog(null, "Renamed " + oldName + " to " + newName);
             commonCommand.rename(fullPathOld, fullPathNew);
+            // if success =>
+
         }
     }
 
@@ -861,25 +840,13 @@ public void mouseClicked(MouseEvent e) {
         }
 
         String fullPath = currentNodeInRemoteTree.getPath();
-        if (!fullPath.isEmpty()){
+        if (!fullPath.isEmpty()) {
             fullPath += "/" + folderName;
-        }
-        else {
+        } else {
             fullPath += folderName;
         }
-
-        // Gọi lệnh tạo thư mục
-        try {
-            directoryCommand.makeDirectory(fullPath);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(null, "Failed to create folder: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        // Cập nhật bảng hiển thị
-        DefaultTableModel model = (DefaultTableModel) table.getModel();
-        model.addRow(new Object[]{folderName, "-", "Folder", new java.util.Date()});
-
+        directoryCommand.makeDirectory(fullPath);
+        // if success
         // Thêm nút mới vào remoteTree
         DefaultTreeModel treeModel = (DefaultTreeModel) remoteTree.getModel();
         Node newNode = Node.builder()
@@ -893,13 +860,11 @@ public void mouseClicked(MouseEvent e) {
         DefaultMutableTreeNode newFolderNode = new DefaultMutableTreeNode(newNode);
         newFolderNode.add(new DefaultMutableTreeNode(loading));
         currentDefaultMutableTreeNodeInRemoteTree.add(newFolderNode);
-        treeModel.reload(currentDefaultMutableTreeNodeInRemoteTree); // Làm mới cây để hiển thị nút mới
+        treeModel.reload(currentDefaultMutableTreeNodeInRemoteTree);
 
-        // In thông tin tạo thư mục ra console
-        System.out.println("New folder created at: " + fullPath);
+        java.util.List<String> response = commonCommand.listDetail(currentNodeInRemoteTree.getPath());
+        updateRemoteTable(remoteTable, processListFileAndFolder(response));
 
-        // Hiển thị thông báo thành công
-        JOptionPane.showMessageDialog(null, "Folder '" + fullPath + "' created successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void handleUploadFile(JTable table) {
@@ -938,27 +903,23 @@ public void mouseClicked(MouseEvent e) {
             for (String file : fileUpload) {
                 String fullPathToServer = currentNodeInRemoteTree.getPath();
                 String name;
-                if (file.contains("\\")){
+                if (file.contains("\\")) {
                     name = file.substring(file.lastIndexOf('\\') + 1);
-                }
-                else {
+                } else {
                     name = file;
                 }
-                if (!fullPathToServer.isEmpty()){
+                if (!fullPathToServer.isEmpty()) {
                     fullPathToServer += "/" + name;
-                }
-                else {
+                } else {
                     fullPathToServer += name;
                 }
                 fileCommand.send(file, fullPathToServer);
             }
 //            fileCommand.multiPut(fileUpload);
 
-            // Optionally, you can add these files to the table
-            DefaultTableModel model = (DefaultTableModel) table.getModel();
-            for (File file : selectedFiles) {
-                model.addRow(new Object[]{file.getName(), file.length() + " bytes", "File", new java.util.Date(file.lastModified())});
-            }
+            java.util.List<String> response = commonCommand.listDetail(currentNodeInRemoteTree.getPath());
+            updateRemoteTable(remoteTable, processListFileAndFolder(response));
+
         } else if (result == JFileChooser.CANCEL_OPTION) {
             // If the user canceled the operation
             System.out.println("File upload canceled.");
