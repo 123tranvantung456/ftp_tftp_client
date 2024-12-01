@@ -37,6 +37,7 @@ public class Client extends JFrame {
     @Autowired
     private LocalCommand localCommand;
 
+    private TFTPHandle tftpHandle = new TFTPHandle();
 
     private JTree localTree, remoteTree;
     private JTable localTable, remoteTable;
@@ -331,19 +332,20 @@ public class Client extends JFrame {
             String type = (String) typeComboBox.getSelectedItem();
             int[] filesToUpload = getSelectedFilesFromLocalTable(table);
 
-            assert protocol != null;
-            assert type != null;
-            if (!clientConfig.getTransferType().name().equals(type.toUpperCase())) {
-                if (type.equals("Binary")) {
-                    transferCommand.setBinaryMode();
-                } else if (type.equals("Ascii")) {
-                    transferCommand.setAsciiMode();
-                }
-            }
+//            assert protocol != null;
+//            assert type != null;
+//            if (!clientConfig.getTransferType().name().equals(type.toUpperCase())) {
+//                if (type.equals("Binary")) {
+//                    transferCommand.setBinaryMode();
+//                } else if (type.equals("Ascii")) {
+//                    transferCommand.setAsciiMode();
+//                }
+//            }
 //                fileCommand.multiPut(filesToUpload.toArray(new String[0]));
             for (int row : filesToUpload) {
                 String file = (String) table.getValueAt(row, 4);
-                String fullPathToServer = currentNodeInRemoteTree.getPath();
+//                String fullPathToServer = currentNodeInRemoteTree.getPath();
+                String fullPathToServer = "";
                 String name;
                 if (file.contains("\\")) {
                     name = file.substring(file.lastIndexOf('\\') + 1);
@@ -356,10 +358,12 @@ public class Client extends JFrame {
                     fullPathToServer += name;
                 }
                 if (protocol.equals("FTP")) {
-                    fileCommand.send(file, fullPathToServer);
+//                    fileCommand.send(file, fullPathToServer);
+                    System.out.println(file);
+                    System.out.println(fullPathToServer);
                     // if success : ghi log
                 } else if (protocol.equals("TFTP")) {
-
+                    tftpHandle.handleRequest(TFTPHandle.OP_WRQ, file, type);
                 }
             }
             java.util.List<String> response = commonCommand.listDetail(currentNodeInRemoteTree.getPath());
