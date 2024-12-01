@@ -1,9 +1,11 @@
 package com.java.gui;
 
 import com.java.client.ftp.enums.CommandOfClient;
+import com.java.client.ftp.enums.TransferMode;
 import com.java.client.ftp.handle.*;
 import com.java.client.ftp.router.Router;
 import com.java.client.ftp.system.ClientConfig;
+import com.java.client.tftp.TFTPHandle;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -23,8 +25,6 @@ public class Client extends JFrame {
     private ClientConfig clientConfig;
 
     @Autowired
-    private AuthCommand authCommand;
-    @Autowired
     private CommonCommand commonCommand;
     @Autowired
     private ConnectionCommand connectionCommand;
@@ -35,8 +35,9 @@ public class Client extends JFrame {
     @Autowired
     private FileCommand fileCommand;
     @Autowired
-    private LocalCommand localCommand;
+    private TransferModeCommand transferModeCommand;
 
+    private TFTPHandle tftpHandle = new TFTPHandle();
 
     private JTree localTree, remoteTree;
     private JTable localTable, remoteTable;
@@ -73,6 +74,8 @@ public class Client extends JFrame {
         connectionPanel.add(portField);
         JButton connectButton = new JButton("Quickconnect");
         connectionPanel.add(connectButton);
+        JButton btnSetting = new JButton("Setting");
+        connectionPanel.add(btnSetting);
 
         // Khu vực log
         logArea = new JTextArea(50, 20);
@@ -114,6 +117,7 @@ public class Client extends JFrame {
 
         // Gọi hàm xử lý khi nút được nhấn
         connectButton.addActionListener(e -> handleConnect(hostField, usernameField, passwordField, portField));
+        btnSetting.addActionListener(e -> handleSettingsDialog());
     }
 
     // connect
@@ -139,6 +143,59 @@ public class Client extends JFrame {
         } catch (Exception ex) {
             logArea.append("Connection failed: " + ex.getMessage() + "\n");
         }
+    }
+
+
+    private void handleSettingsDialog() {
+        JDialog settingsDialog = new JDialog((Frame) null, "Settings", true);
+        settingsDialog.setLayout(null);
+
+        // Tạo các thành phần
+        JLabel transferModeLabel = new JLabel("Transfer Mode:");
+        JComboBox<String> transferModeComboBox = new JComboBox<>(new String[]{"Active", "Passive"});
+
+        JButton confirmButton = new JButton("OK");
+        JButton cancelButton = new JButton("Cancel");
+
+        // Đặt vị trí
+        transferModeLabel.setBounds(20, 20, 100, 25);
+        transferModeComboBox.setBounds(120, 20, 240, 25);
+        confirmButton.setBounds(80, 60, 80, 30);
+        cancelButton.setBounds(200, 60, 100, 30);
+
+        // Thiết lập giá trị mặc định cho combobox
+        TransferMode currentTransferMode = clientConfig.getTransferModeDefault();
+        if (currentTransferMode == TransferMode.ACTIVE) {
+            transferModeComboBox.setSelectedItem("Active");
+        } else if (currentTransferMode == TransferMode.PASSIVE) {
+            transferModeComboBox.setSelectedItem("Passive");
+        }
+
+        // Thêm các thành phần vào dialog
+        settingsDialog.add(transferModeLabel);
+        settingsDialog.add(transferModeComboBox);
+        settingsDialog.add(confirmButton);
+        settingsDialog.add(cancelButton);
+
+        // Xử lý sự kiện nút OK
+        confirmButton.addActionListener(e -> {
+            String selectedTransferMode = (String) transferModeComboBox.getSelectedItem();
+            if ("Active".equals(selectedTransferMode)) {
+                clientConfig.setTransferModeDefault(TransferMode.ACTIVE);
+            } else if ("Passive".equals(selectedTransferMode)) {
+                clientConfig.setTransferModeDefault(TransferMode.PASSIVE);
+            }
+            settingsDialog.dispose();
+        });
+
+        // Xử lý sự kiện nút Cancel
+        cancelButton.addActionListener(e -> settingsDialog.dispose());
+
+        // Cài đặt cho dialog
+        settingsDialog.setSize(400, 150);
+        settingsDialog.setLocationRelativeTo(null);
+        settingsDialog.setResizable(false);
+        settingsDialog.setVisible(true);
     }
 
 
@@ -359,7 +416,9 @@ public class Client extends JFrame {
                     fileCommand.send(file, fullPathToServer);
                     // if success : ghi log
                 } else if (protocol.equals("TFTP")) {
+                    directoryCommand.changeDirectory(currentNodeInRemoteTree.getPath());
 
+                    directoryCommand.changeDirectory("/");
                 }
             }
             java.util.List<String> response = commonCommand.listDetail(currentNodeInRemoteTree.getPath());
@@ -730,7 +789,9 @@ public class Client extends JFrame {
                     fileCommand.get(fullPath);
                     // if success : ghi log
                 } else if (protocol.equals("TFTP")) {
-
+                    directoryCommand.changeDirectory(currentNodeInRemoteTree.getPath());
+                    tftpHandle.handleRequest(TFTPHandle.OP_WRQ, file, type);
+                    directoryCommand.changeDirectory("/");
                 }
             }
             updateLocalTable(localTable, getFileFromNode(currentDefaultMutableTreeNodeInLocalTree));
@@ -795,6 +856,17 @@ public class Client extends JFrame {
     private void handleRenameFile(JTable table, int rowIndex) {
         String oldName = (String) table.getValueAt(rowIndex, 0);
         String newName = JOptionPane.showInputDialog(table, "new name:", oldName);
+        if (newName == null || newName.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(table, "Name cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Kiểm tra tên trùng lặp
+        if (isNameDuplicate(table, newName.trim(), rowIndex)) {
+            JOptionPane.showMessageDialog(table, "A file with the same name already exists.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         String fullPathOld = currentNodeInRemoteTree.getPath();
         if (!fullPathOld.isEmpty()) {
             fullPathOld += "/" + oldName;
@@ -809,10 +881,9 @@ public class Client extends JFrame {
             fullPathNew += newName;
         }
         if (newName != null && !newName.trim().isEmpty()) {
-            table.setValueAt(newName, rowIndex, 0);
             commonCommand.rename(fullPathOld, fullPathNew);
             // if success =>
-
+            table.setValueAt(newName, rowIndex, 0);
         }
     }
 
@@ -934,6 +1005,19 @@ public class Client extends JFrame {
         table.setModel(model);
     }
 
+    private boolean isNameDuplicate(JTable table, String name, int rowIndex) {
+        int rowCount = table.getRowCount();
+        for (int i = 0; i < rowCount; i++) {
+            if (i != rowIndex) { // Bỏ qua dòng hiện tại
+                String existingName = (String) table.getValueAt(i, 0);
+                if (name.equals(existingName)) {
+                    return true; // Tên trùng
+                }
+            }
+        }
+        return false; // Không trùng
+    }
+
     private Object[][] processListFileAndFolder(java.util.List<String> ftpData) {
         Object[][] tableData = new Object[ftpData.size()][4];
 
@@ -944,8 +1028,8 @@ public class Client extends JFrame {
             // Phân tích từng trường
             String permissions = parts[0];
             String type = permissions.startsWith("d") ? "Folder" : "File";
-            String size = type.equals("Folder") ? "-" : parts[4] + " bytes"; // Folder không hiển thị kích thước
-            String date = parts[5] + " " + parts[6] + " " + parts[7];
+            String size = type.equals("Folder") ? "-" : parts[1] + " bytes"; // Folder không hiển thị kích thước
+            String date = parts[2] + " " + parts[3] + " " + parts[4] + " " + parts[5] + " " + parts[6] + " " + parts[7];
             String name = parts.length > 8 ? parts[8] : ""; // Lấy phần tên (nếu có)
 
             // Gán dữ liệu vào mảng

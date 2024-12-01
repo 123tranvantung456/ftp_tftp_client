@@ -21,8 +21,12 @@ public class ConnectionCommandImpl implements ConnectionCommand {
         try {
                 serverAddress = Const.FTP_ADDRESS;
                 serverPort = Const.FTP_PORT;
-                username = "tranvantung";
-                password = "hellotung";
+                username = "2";
+                password = "2";
+//            serverAddress = Const.FTP_ADDRESS;
+//            serverPort = Const.FTP_PORT;
+//            username = "tranvantung";
+//            password = "hellotung";
 
             ftpClient.connect(serverAddress, serverPort);
             ftpClient.receiveCommand();
