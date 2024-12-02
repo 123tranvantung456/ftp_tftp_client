@@ -1,5 +1,8 @@
 package com.java.client.tftp;
 
+import com.java.client.ftp.system.Const;
+
+import javax.swing.*;
 import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -8,7 +11,7 @@ import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 
 public class TFTPHandle {
-    public static final int BUFFER_SIZE = 516;
+    public static final int BUFFER_SIZE = 64004;
     public static final short OP_RRQ = 1;
     public static final short OP_WRQ = 2;
     public static final short OP_DAT = 3;
@@ -16,8 +19,8 @@ public class TFTPHandle {
     public static final short OP_ERR = 5;
 
 
-    public void handleRequest(short requestType, String filePath, String type) {
-        String server = "localhost";
+    public void handleRequest(short requestType, String filePath, String type, JTextArea logArea) {
+        String server = Const.FTP_ADDRESS;
         String portText = "69";
         String mode = "";
         if (type.equals("Binary")){
@@ -26,14 +29,6 @@ public class TFTPHandle {
             mode = "netascii";
         }
 
-//        if (server.isEmpty()) {
-//            System.out.println("Error: Server address cannot be empty.");
-//            return;
-//        }
-//        if (portText.isEmpty() || !portText.matches("\\d+")) {
-//            System.out.println("Error: Port must be a valid number.");
-//            return;
-//        }
         if (filePath.isEmpty()) {
             System.out.println("Error: File path cannot be empty.");
             return;
@@ -42,9 +37,9 @@ public class TFTPHandle {
         File file = new File(filePath);
         String fileName = file.getName();
 
-//        if (requestType == OP_RRQ) {
-//            fileName = filePath;
-//        }
+        if (requestType == OP_RRQ) {
+            fileName = filePath;
+        }
 
         if (requestType == OP_WRQ && (!file.exists() || !file.canRead())) {
             System.out.println("TFTP: Can't read from local file '" + filePath + "'");
@@ -61,9 +56,9 @@ public class TFTPHandle {
             socket.send(packet);
 
             if (requestType == OP_RRQ) {
-                handleDownload(socket, fileName, mode);
+                handleDownload(socket, fileName, mode, logArea );
             } else if (requestType == OP_WRQ) {
-                handleUpload(socket, filePath, serverAddress, mode);
+                handleUpload(socket, filePath, serverAddress, mode, logArea);
             }
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
@@ -85,10 +80,11 @@ public class TFTPHandle {
         return baos.toByteArray();
     }
 
-    public void handleDownload(DatagramSocket socket, String fileName, String mode) throws IOException {
+    public void handleDownload(DatagramSocket socket, String fileName, String mode, JTextArea logArea) throws IOException {
         long startTime = System.currentTimeMillis();
-        int totalBytes = 0;
-
+        long totalBytes = 0;
+        fileName = "D:\\Dowloads\\" + fileName;
+        System.out.println(fileName);
         try (FileOutputStream fos = new FileOutputStream(fileName);
              OutputStream os = (mode.equals("netascii")
                      ? new NetAsciiOutputStream(fos)
@@ -120,7 +116,7 @@ public class TFTPHandle {
                         }
                     }
                 } else if (opcode == OP_ERR) {
-                    handleError(wrap);
+                    handleError(wrap, logArea);
                     return;
                 }
             }
@@ -130,14 +126,12 @@ public class TFTPHandle {
         double durationSeconds = (endTime - startTime) / 1000.0;
         double speed = totalBytes / durationSeconds;
 
-//        System.out.println(String.format("Download complete: %s (%d bytes in %.2f second(s), %.2f bytes/s)",
-//            fileName, totalBytes, durationSeconds, speed));
         System.out.println(String.format("Transfer successful: %d bytes in %.2f second(s), %.2f bytes/s",
                 totalBytes, durationSeconds, speed));
     }
 
 
-    public void handleUpload(DatagramSocket socket, String filePath, InetAddress serverAddress , String mode) throws IOException {
+    public void handleUpload(DatagramSocket socket, String filePath, InetAddress serverAddress, String mode, JTextArea logArea) throws IOException {
         long startTime = System.currentTimeMillis();
         int totalBytes = 0;
 
@@ -147,68 +141,78 @@ public class TFTPHandle {
                      : fis)) {
 
             short blockNumber = 0;
-
-            byte[] ackBuffer = new byte[516]; // Tăng kích thước buffer để nhận cả các gói lỗi lớn hơn
+            byte[] ackBuffer = new byte[BUFFER_SIZE];
             DatagramPacket ackPacket = new DatagramPacket(ackBuffer, ackBuffer.length);
 
             socket.receive(ackPacket);
-            ByteBuffer wrap = ByteBuffer.wrap(ackBuffer, 0, ackPacket.getLength()); // Chỉ đọc dữ liệu thực tế trong gói
+            ByteBuffer wrap = ByteBuffer.wrap(ackBuffer, 0, ackPacket.getLength());
             short opcode = wrap.getShort();
-
-            if (opcode == OP_ERR) { // Gói lỗi
-                handleError(wrap);
+            if (opcode == OP_ERR) {
+                System.err.println("handle error file ton tai");
+                handleError(wrap, logArea);
                 return;
             } else if (opcode != OP_ACK) {
                 System.out.println("Error: Expected ACK but received different opcode");
                 return;
             }
-
             short ackBlock = wrap.getShort();
             if (ackBlock != 0) {
                 System.out.println("Error: Expected ACK for block 0 but received ACK for block " + ackBlock);
                 return;
             }
-
             int serverPort = ackPacket.getPort();
 
             boolean sending = true;
-            while (sending) {
-                byte[] buffer = new byte[512];
-                int bytesRead = is.read(buffer);
+            int retryCount = 0;  // Đếm số lần gửi lại
 
+            while (sending) {
+                byte[] buffer = new byte[BUFFER_SIZE - 4];
+                int bytesRead = is.read(buffer);
                 if (bytesRead == -1) {
                     bytesRead = 0; // EOF
                 }
-
                 totalBytes += bytesRead;
 
                 DatagramPacket dataPacket = createDataPacket(++blockNumber, buffer, bytesRead, serverAddress, serverPort);
                 socket.send(dataPacket);
+                System.out.println("Block number sent: " + blockNumber);
 
-                ackBuffer = new byte[516]; // Tạo lại buffer mới với kích thước đầy đủ
+                ackBuffer = new byte[BUFFER_SIZE];
                 ackPacket = new DatagramPacket(ackBuffer, ackBuffer.length);
+                socket.setSoTimeout(5000); // Timeout 5 giây
 
-                socket.setSoTimeout(5000); // Đặt thời gian chờ 5 giây
-                try {
-                    socket.receive(ackPacket);
-                } catch (SocketTimeoutException e) {
-                    System.out.println("Timeout waiting for ACK, resending block " + blockNumber);
-                    socket.send(dataPacket);
-                    continue;
+                while (retryCount < 6) {  // Tối đa 6 lần thử gửi lại
+                    try {
+                        socket.receive(ackPacket);
+                        wrap = ByteBuffer.wrap(ackBuffer, 0, ackPacket.getLength());
+                        opcode = wrap.getShort();
+
+                        if (opcode == OP_ACK) {
+                            ackBlock = wrap.getShort();
+                            System.out.println("ACK received: " + ackBlock);
+                            if (ackBlock == blockNumber) {
+                                if (bytesRead < BUFFER_SIZE - 4) {
+                                    sending = false; // Kết thúc nếu dữ liệu đã hết
+                                }
+                                break;
+                            } else {
+                                System.out.println("Mismatch in ACK block number. Received: " + ackBlock + ", Expected: " + blockNumber);
+                                socket.send(dataPacket); // Gửi lại gói nếu ACK không khớp
+                                retryCount++;
+                            }
+                        } else if (opcode == OP_ERR) {
+                            handleError(wrap, logArea);
+                            return;
+                        }
+                    } catch (SocketTimeoutException e) {
+                        System.out.println("Timeout waiting for ACK, resending block " + blockNumber);
+                        socket.send(dataPacket); // Gửi lại nếu timeout
+                        retryCount++;
+                    }
                 }
 
-                wrap = ByteBuffer.wrap(ackBuffer, 0, ackPacket.getLength());
-                opcode = wrap.getShort();
-
-                if (opcode == OP_ACK) {
-                    ackBlock = wrap.getShort();
-                    if (ackBlock == blockNumber) {
-                        if (bytesRead < 512) {
-                            sending = false; // Gói cuối cùng, kết thúc
-                        }
-                    }
-                } else if (opcode == OP_ERR) {
-                    handleError(wrap);
+                if (retryCount >= 6) {
+                    System.out.println("Error: Failed to receive ACK after 6 attempts.");
                     return;
                 }
             }
@@ -217,13 +221,9 @@ public class TFTPHandle {
         long endTime = System.currentTimeMillis();
         double durationSeconds = (endTime - startTime) / 1000.0;
         double speed = totalBytes / durationSeconds;
-
-//      System.out.println(String.format("Transfer successful: %s (%d bytes in %.2f second(s), %.2f bytes/s)",
-//      filePath, totalBytes, durationSeconds, speed));
         System.out.println(String.format("Transfer successful: %d bytes in %.2f second(s), %.2f bytes/s",
                 totalBytes, durationSeconds, speed));
     }
-
     public DatagramPacket createDataPacket(short blockNumber, byte[] data, int length, InetAddress serverAddress, int port) {
         ByteBuffer buffer = ByteBuffer.allocate(4 + length);
         buffer.putShort(OP_DAT);
@@ -242,10 +242,12 @@ public class TFTPHandle {
         socket.send(ackPacket);
     }
 
-    public void handleError(ByteBuffer buffer) {
+    public void handleError(ByteBuffer buffer, JTextArea logArea) {
         short errorCode = buffer.getShort();
         byte[] errorMsg = new byte[buffer.remaining()];
         buffer.get(errorMsg);
-        System.out.println("Error: " + errorCode + " - " + new String(errorMsg));
+        String currentText = logArea.getText(); // Lấy nội dung hiện tại
+        logArea.setText("Error: " + errorCode + " - " + new String(errorMsg) + "\n" + currentText); // Ghi nội dung mới lên đầu
+//        System.out.println("Error: " + errorCode + " - " + new String(errorMsg));
     }
 }

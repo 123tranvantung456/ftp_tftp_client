@@ -1,7 +1,10 @@
 package com.java.client.ftp.system;
 
 import com.java.client.ftp.util.PrintUtil;
+import com.java.gui.Client;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import java.io.*;
 import java.net.*;
@@ -12,6 +15,9 @@ public class FTPClient {
 
     private final ClientConfig clientConfig;
 
+    @Lazy
+    @Autowired
+    private Client client;
     private Socket socket;
     private BufferedReader reader;
     private BufferedWriter writer;
@@ -51,6 +57,7 @@ public class FTPClient {
         } catch (IOException e) {
             PrintUtil.printToConsole(e.getMessage());
         }
+        client.prependText(response);
         PrintUtil.printToConsole(response);
         return response;
     }

@@ -1,12 +1,11 @@
 package com.java.gui;
 
-import com.java.client.ftp.enums.CommandOfClient;
 import com.java.client.ftp.enums.TransferMode;
 import com.java.client.ftp.handle.*;
-import com.java.client.ftp.router.Router;
 import com.java.client.ftp.system.ClientConfig;
 import com.java.client.tftp.TFTPHandle;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.swing.*;
@@ -21,6 +20,7 @@ import java.io.File;
 
 @Component
 public class Client extends JFrame {
+
     @Autowired
     private ClientConfig clientConfig;
 
@@ -32,10 +32,9 @@ public class Client extends JFrame {
     private DataTransferCommand transferCommand;
     @Autowired
     private DirectoryCommand directoryCommand;
+    @Lazy
     @Autowired
     private FileCommand fileCommand;
-    @Autowired
-    private TransferModeCommand transferModeCommand;
 
     private TFTPHandle tftpHandle = new TFTPHandle();
 
@@ -132,9 +131,9 @@ public class Client extends JFrame {
 
             // Xử lý logic kết nối (thay bằng logic thực tế nếu cần)
             if (!host.isEmpty() && !username.isEmpty() && !password.isEmpty()) {
-                logArea.append("Connecting to " + host + ":" + port + " with username " + username + "\n");
+//                logArea.append("Connecting to " + host + ":" + port + " with username " + username + "\n");
                 connectionCommand.openConnection(host, port, username, password);
-                logArea.append("Connected successfully!\n");
+//                logArea.append("Connected successfully!\n");
             } else {
                 logArea.append("Please fill in all the fields.\n");
             }
@@ -264,7 +263,7 @@ public class Client extends JFrame {
                     if (selectedNode != null) {
                         File selectedFile = getFileFromNode(selectedNode);
                         if (selectedFile != null && selectedFile.isDirectory()) {
-                            logArea.append("Local folder selected: " + selectedFile.getAbsolutePath() + "\n");
+//                            logArea.append("Local folder selected: " + selectedFile.getAbsolutePath() + "\n");
                             updateLocalTable(localTable, selectedFile);
                         }
                     }
@@ -415,10 +414,9 @@ public class Client extends JFrame {
                 if (protocol.equals("FTP")) {
                     fileCommand.send(file, fullPathToServer);
                     // if success : ghi log
-                } else if (protocol.equals("TFTP")) {
-                    directoryCommand.changeDirectory(currentNodeInRemoteTree.getPath());
-
-                    directoryCommand.changeDirectory("/");
+                }
+                else if (protocol.equals("TFTP")) {
+                    tftpHandle.handleRequest(TFTPHandle.OP_WRQ, file, type, logArea);
                 }
             }
             java.util.List<String> response = commonCommand.listDetail(currentNodeInRemoteTree.getPath());
@@ -607,8 +605,8 @@ public class Client extends JFrame {
                         DefaultMutableTreeNode selectedNode =
                                 (DefaultMutableTreeNode) remoteTree.getLastSelectedPathComponent();
                         if (selectedNode != null) {
-                            String selectedFolder = selectedNode.toString();
-                            logArea.append("Remote folder selected: " + selectedFolder + "\n");
+//                            String selectedFolder = selectedNode.toString();
+//                            logArea.append("Remote folder selected: " + selectedFolder + "\n");
                             java.util.List<String> response = commonCommand.listDetail(((Node) selectedNode.getUserObject()).getPath());
                             updateRemoteTable(remoteTable, processListFileAndFolder(response));
                         }
@@ -789,9 +787,7 @@ public class Client extends JFrame {
                     fileCommand.get(fullPath);
                     // if success : ghi log
                 } else if (protocol.equals("TFTP")) {
-                    directoryCommand.changeDirectory(currentNodeInRemoteTree.getPath());
-                    tftpHandle.handleRequest(TFTPHandle.OP_WRQ, file, type);
-                    directoryCommand.changeDirectory("/");
+                    tftpHandle.handleRequest(TFTPHandle.OP_RRQ, file, type, logArea);
                 }
             }
             updateLocalTable(localTable, getFileFromNode(currentDefaultMutableTreeNodeInLocalTree));
@@ -1043,7 +1039,7 @@ public class Client extends JFrame {
     }
 
     // LOG
-    private void prependText(String message) {
+    public void prependText(String message) {
         String currentText = logArea.getText(); // Lấy nội dung hiện tại
         logArea.setText(message + "\n" + currentText); // Ghi nội dung mới lên đầu
     }
