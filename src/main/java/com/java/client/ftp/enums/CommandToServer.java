@@ -21,9 +21,12 @@ public enum CommandToServer {
     CWD,
     XPWD,
     XMKD,
-    XRMD
+    XRMD,
+
 
     //extend
-
+    PER,
+    DPER,
+    CPER
     ;
 }

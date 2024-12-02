@@ -1,5 +1,6 @@
 package com.java.gui;
 
+import com.java.client.ftp.enums.Permission;
 import com.java.client.ftp.enums.TransferMode;
 import com.java.client.ftp.handle.*;
 import com.java.client.ftp.system.ClientConfig;
@@ -9,6 +10,8 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableColumn;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.table.DefaultTableModel;
@@ -17,6 +20,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.lang.reflect.Array;
 
 @Component
 public class Client extends JFrame {
@@ -32,6 +36,8 @@ public class Client extends JFrame {
     private DataTransferCommand transferCommand;
     @Autowired
     private DirectoryCommand directoryCommand;
+    @Autowired
+    private PermissionCommand permissionCommand;
     @Lazy
     @Autowired
     private FileCommand fileCommand;
@@ -143,7 +149,6 @@ public class Client extends JFrame {
             logArea.append("Connection failed: " + ex.getMessage() + "\n");
         }
     }
-
 
     private void handleSettingsDialog() {
         JDialog settingsDialog = new JDialog((Frame) null, "Settings", true);
@@ -682,6 +687,7 @@ public class Client extends JFrame {
         JMenuItem uploadItem = new JMenuItem("Upload");
         JMenuItem createItem = new JMenuItem("Create folder");
         JMenuItem renameItem = new JMenuItem("Rename");
+        JMenuItem permissionItem = new JMenuItem("Permissions");
 
         // Thêm các action listener cho các menu item
         downloadItem.addActionListener(ev -> showDownloadForm(table));
@@ -689,12 +695,14 @@ public class Client extends JFrame {
         uploadItem.addActionListener(ev -> handleUploadFile(table));
         createItem.addActionListener(ev -> handleCreateFolder(table));
         renameItem.addActionListener(ev -> handleRenameFile(table, table.getSelectedRow()));
+        permissionItem.addActionListener(ev -> handlePermission());
 
         popupMenu.add(renameItem);
         popupMenu.add(downloadItem);
         popupMenu.add(deleteItem);
         popupMenu.add(uploadItem);
         popupMenu.add(createItem);
+        popupMenu.add(permissionItem);
 
         // Thêm sự kiện chuột phải
         table.addMouseListener(new MouseAdapter() {
@@ -717,6 +725,7 @@ public class Client extends JFrame {
                     downloadItem.setEnabled(!hasFolderSelected && selectedRows.length >= 1);
                     renameItem.setEnabled(selectedRows.length == 1);
                     deleteItem.setEnabled(selectedRows.length >= 1);
+                    permissionItem.setEnabled(PermissionUtil.checkEnableMenuPermission(null) && selectedRows.length == 1);
 
                     // Hiển thị menu chuột phải
                     popupMenu.show(table, e.getX(), e.getY());
@@ -725,6 +734,185 @@ public class Client extends JFrame {
         });
 
         return table;
+    }
+
+    private void handlePermission() {
+        DefaultMutableTreeNode selectedNode = currentDefaultMutableTreeNodeInRemoteTree;
+        if (selectedNode != null) {
+            JDialog permissionDialog = new JDialog((Frame) null, "Access Permissions", true);
+            permissionDialog.setLayout(new BorderLayout());
+            permissionDialog.setSize(500, 500);
+
+            // Search Panel
+            JPanel searchPanel = new JPanel(new BorderLayout());
+            JTextField searchField = new JTextField();
+            JButton searchButton = new JButton("Search");
+            searchPanel.add(new JLabel("Search user:"), BorderLayout.WEST);
+            searchPanel.add(searchField, BorderLayout.CENTER);
+            searchPanel.add(searchButton, BorderLayout.EAST);
+
+
+            //id item
+//            int selectedRow = remoteTable.getSelectedRow();
+//            long itemId = (long)remoteTable.getValueAt(selectedRow, 8);
+            long itemId = 0;
+            java.util.List<String> permissions = permissionCommand.getPermission(itemId);
+
+            // Search Result List
+            DefaultListModel<String> searchListModel = new DefaultListModel<>();
+            JList<String> searchList = new JList<>(searchListModel);
+//            java.util.List<String> usernames = java.util.Arrays.asList(
+//                    "tung",
+//                    "van",
+//                    "khanh",
+//                    "dev"
+//            );
+
+            java.util.List<String> usernames = PermissionUtil.getUser(permissions);
+            for (String username : usernames) {
+                searchListModel.addElement(username);
+            }
+            JScrollPane searchScrollPane = new JScrollPane(searchList);
+            searchScrollPane.setBorder(BorderFactory.createTitledBorder("Search Results"));
+
+            // User Permissions Table
+//            java.util.List<UserPermission> userPermissions = java.util.Arrays.asList(
+//              UserPermission.builder()
+//                      .username("us1")
+//                      .permission(Permission.ALL)
+//                      .build(),
+//                    UserPermission.builder()
+//                            .username("us3")
+//                            .permission(Permission.WRITE)
+//                            .build(),
+//                    UserPermission.builder()
+//                            .username("us4")
+//                            .permission(Permission.WRITE)
+//                            .build(),
+//                    UserPermission.builder()
+//                            .username("us2")
+//                            .permission(Permission.READ)
+//                            .build()
+//            );
+            java.util.List<UserPermission> userPermissions = PermissionUtil.getUserPermission(permissions);
+            DefaultTableModel tableModel = new DefaultTableModel(new Object[]{"Username", "Permission", "Delete"}, 0);
+            JTable userTable = new JTable(tableModel);
+
+            for (UserPermission userPermission : userPermissions) {
+                tableModel.addRow(new Object[]{userPermission.getUsername(), userPermission.getPermission(), false});
+            }
+            // Creating a checkbox column (last column in the table)
+            TableColumn deleteColumn = userTable.getColumnModel().getColumn(2);
+            deleteColumn.setCellEditor(new DefaultCellEditor(new JCheckBox()));
+            deleteColumn.setCellRenderer(new DefaultTableCellRenderer() {
+                @Override
+                public java.awt.Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                    JCheckBox checkBox = new JCheckBox();
+                    checkBox.setSelected((Boolean) value);
+                    return checkBox;
+                }
+            });
+
+            // Dropdown chọn quyền
+            JComboBox<String> permissionComboBox = new JComboBox<>(new String[]{"READ", "WRITE", "ALL"});
+            userTable.getColumnModel().getColumn(1).setCellEditor(new DefaultCellEditor(permissionComboBox));
+
+            JScrollPane tableScrollPane = new JScrollPane(userTable);
+
+            // Add User Button
+            JButton addUserButton = new JButton("Add User");
+            addUserButton.addActionListener(event -> {
+                String selectedUser = searchList.getSelectedValue();
+                if (selectedUser != null) {
+                    boolean alreadyAdded = false;
+                    for (int i = 0; i < tableModel.getRowCount(); i++) {
+                        if (tableModel.getValueAt(i, 0).equals(selectedUser)) {
+                            alreadyAdded = true;
+                            break;
+                        }
+                    }
+                    if (!alreadyAdded) {
+                        tableModel.addRow(new Object[]{selectedUser, "READ"});
+                    } else {
+                        JOptionPane.showMessageDialog(permissionDialog, "User already exists in the list.");
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(permissionDialog, "Please select a user from the search results.");
+                }
+            });
+
+            // Search Button Action
+            searchButton.addActionListener(event -> {
+                String searchQuery = searchField.getText().trim();
+                searchListModel.clear();
+                if (!searchQuery.isEmpty()) {
+                    java.util.List<String> usernameSearchList = PermissionUtil.searchByUsername(searchQuery, usernames);
+                    for (String username : usernameSearchList) {
+                        searchListModel.addElement(username);
+                    }
+                    if (searchListModel.isEmpty()) {
+                        JOptionPane.showMessageDialog(permissionDialog, "No users found.");
+                    }
+                } else {
+                    for (String username : usernames) {
+                        searchListModel.addElement(username);
+                    }
+                }
+            });
+
+            // Action Panel
+            JPanel actionPanel = new JPanel(new FlowLayout());
+            JButton applyButton = new JButton("Apply");
+            JButton deleteButton = new JButton("Delete");
+            JButton cancelButton = new JButton("Cancel");
+
+            applyButton.addActionListener(event -> {
+                for (int i = 0; i < tableModel.getRowCount(); i++) {
+                    String username = (String) tableModel.getValueAt(i, 0);
+                    String permission = (String) tableModel.getValueAt(i, 1);
+                    permissionCommand.createPermission(itemId + "/" + username + "/" + permission);
+                    //
+                }
+                JOptionPane.showMessageDialog(permissionDialog, "Permissions applied successfully.");
+                permissionDialog.dispose();
+            });
+
+            cancelButton.addActionListener(event -> permissionDialog.dispose());
+
+            deleteButton.addActionListener(event -> {
+                for (int i = 0; i < tableModel.getRowCount(); i++) {
+                    Boolean isSelected = (Boolean) tableModel.getValueAt(i, 2);
+                    if (isSelected != null && isSelected) {
+                        String username = (String) tableModel.getValueAt(i, 0);
+//                        System.out.println(username);
+                        permissionCommand.deletePermission(itemId + "/" + username);
+                        permissionDialog.dispose();
+                    }
+            }});
+
+            actionPanel.add(applyButton);
+            actionPanel.add(cancelButton);
+            actionPanel.add(deleteButton);
+
+            // Combine Panels
+            // Panel chứa danh sách tìm kiếm và nút thêm
+            JPanel searchResultPanel = new JPanel(new BorderLayout());
+            searchResultPanel.add(searchScrollPane, BorderLayout.CENTER);
+            searchResultPanel.add(addUserButton, BorderLayout.SOUTH);
+
+            // Chia layout chính
+            JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, searchResultPanel, tableScrollPane);
+            splitPane.setResizeWeight(0.5);
+
+            // Thêm các thành phần vào dialog
+            permissionDialog.add(searchPanel, BorderLayout.NORTH);
+            permissionDialog.add(splitPane, BorderLayout.CENTER);
+            permissionDialog.add(actionPanel, BorderLayout.SOUTH);
+
+            permissionDialog.setLocationRelativeTo(remoteTree);
+            permissionDialog.setVisible(true);
+        }
+
     }
 
     private void showDownloadForm(JTable table) {

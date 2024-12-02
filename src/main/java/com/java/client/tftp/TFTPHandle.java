@@ -224,6 +224,7 @@ public class TFTPHandle {
         System.out.println(String.format("Transfer successful: %d bytes in %.2f second(s), %.2f bytes/s",
                 totalBytes, durationSeconds, speed));
     }
+
     public DatagramPacket createDataPacket(short blockNumber, byte[] data, int length, InetAddress serverAddress, int port) {
         ByteBuffer buffer = ByteBuffer.allocate(4 + length);
         buffer.putShort(OP_DAT);
