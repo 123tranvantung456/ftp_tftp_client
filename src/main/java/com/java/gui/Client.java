@@ -419,8 +419,7 @@ public class Client extends JFrame {
                 if (protocol.equals("FTP")) {
                     fileCommand.send(file, fullPathToServer);
                     // if success : ghi log
-                }
-                else if (protocol.equals("TFTP")) {
+                } else if (protocol.equals("TFTP")) {
                     tftpHandle.handleRequest(TFTPHandle.OP_WRQ, file, type, logArea);
                 }
             }
@@ -653,14 +652,14 @@ public class Client extends JFrame {
         java.util.List<String> folderNames = new java.util.ArrayList<>();
 
         for (String line : ftpData) {
-            String[] parts = line.split("\\s+", 9); // Tách dòng thành các trường
+            String[] parts = line.split("\\s+", 7); // Tách dòng thành các trường
 
-            if (parts.length < 9) {
+            if (parts.length < 6) {
                 continue; // Bỏ qua dòng không hợp lệ
             }
 
             String permissions = parts[0]; // Quyền (vd: drwxr-xr-x)
-            String name = parts[8];        // Tên file/folder
+            String name = parts[6];        // Tên file/folder
 
             if (permissions.startsWith("d")) { // Nếu quyền bắt đầu bằng 'd', là thư mục
                 folderNames.add(name);
@@ -673,9 +672,23 @@ public class Client extends JFrame {
 
     // remote table
     private JTable createRemoteTable() {
-        String[] columnNames = {"Name", "Size", "Type", "Last Modified"}; // Không có cột Path
+        // Thêm cột itemId, owner, và isPermission
+        String[] columnNames = {"Name", "Size", "Type", "Last Modified", "itemId", "isPublic", "isOwner"};
         DefaultTableModel model = new DefaultTableModel(columnNames, 0);
         JTable table = new JTable(model);
+
+        // Ẩn các cột itemId, owner, và isPermission
+        table.getColumnModel().getColumn(4).setMinWidth(0);
+        table.getColumnModel().getColumn(4).setMaxWidth(0);
+        table.getColumnModel().getColumn(4).setPreferredWidth(0);
+
+        table.getColumnModel().getColumn(5).setMinWidth(0);
+        table.getColumnModel().getColumn(5).setMaxWidth(0);
+        table.getColumnModel().getColumn(5).setPreferredWidth(0);
+
+        table.getColumnModel().getColumn(6).setMinWidth(0);
+        table.getColumnModel().getColumn(6).setMaxWidth(0);
+        table.getColumnModel().getColumn(6).setPreferredWidth(0);
 
         // Cho phép chọn nhiều dòng
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -753,9 +766,10 @@ public class Client extends JFrame {
 
 
             //id item
-//            int selectedRow = remoteTable.getSelectedRow();
-//            long itemId = (long)remoteTable.getValueAt(selectedRow, 8);
-            long itemId = 0;
+            int selectedRow = remoteTable.getSelectedRow();
+            String itemId = (String) remoteTable.getValueAt(selectedRow, 4);
+
+//            long itemId = 0;
             java.util.List<String> permissions = permissionCommand.getPermission(itemId);
 
             // Search Result List
@@ -832,7 +846,7 @@ public class Client extends JFrame {
                         }
                     }
                     if (!alreadyAdded) {
-                        tableModel.addRow(new Object[]{selectedUser, "READ"});
+                        tableModel.addRow(new Object[]{selectedUser, "READ", false});
                     } else {
                         JOptionPane.showMessageDialog(permissionDialog, "User already exists in the list.");
                     }
@@ -888,7 +902,8 @@ public class Client extends JFrame {
                         permissionCommand.deletePermission(itemId + "/" + username);
                         permissionDialog.dispose();
                     }
-            }});
+                }
+            });
 
             actionPanel.add(applyButton);
             actionPanel.add(cancelButton);
@@ -1023,13 +1038,11 @@ public class Client extends JFrame {
                 }
                 String type = (String) table.getValueAt(row, 2);
                 if (type.equals("File")) {
-                    fileCommand.delete(fullPath);
                     // check success =>
-                    model.removeRow(row);
+                    if (fileCommand.delete(fullPath)) model.removeRow(row);
                 } else if (type.equals("Folder")) {
-                    directoryCommand.removeDirectory(fullPath);
                     // check success =>
-                    model.removeRow(row);
+                    if (directoryCommand.removeDirectory(fullPath)) model.removeRow(row);
                 }
             }
 //            java.util.List<String> response = commonCommand.listDetail(currentNodeInRemoteTree.getPath());
@@ -1065,9 +1078,13 @@ public class Client extends JFrame {
             fullPathNew += newName;
         }
         if (newName != null && !newName.trim().isEmpty()) {
-            commonCommand.rename(fullPathOld, fullPathNew);
             // if success =>
-            table.setValueAt(newName, rowIndex, 0);
+            if (commonCommand.rename(fullPathOld, fullPathNew)) {
+                //render table
+                table.setValueAt(newName, rowIndex, 0);
+                //render tree
+                
+            }
         }
     }
 
@@ -1100,23 +1117,33 @@ public class Client extends JFrame {
         } else {
             fullPath += folderName;
         }
-        directoryCommand.makeDirectory(fullPath);
         // if success
-        // Thêm nút mới vào remoteTree
-        DefaultTreeModel treeModel = (DefaultTreeModel) remoteTree.getModel();
-        Node newNode = Node.builder()
-                .name(folderName)
-                .path(fullPath)
-                .build();
-        Node loading = Node.builder()
-                .name("Loading...")
-                .path("")
-                .build();
-        DefaultMutableTreeNode newFolderNode = new DefaultMutableTreeNode(newNode);
-        newFolderNode.add(new DefaultMutableTreeNode(loading));
-        currentDefaultMutableTreeNodeInRemoteTree.add(newFolderNode);
-        treeModel.reload(currentDefaultMutableTreeNodeInRemoteTree);
+        if (directoryCommand.makeDirectory(fullPath)) {
+            DefaultTreeModel treeModel = (DefaultTreeModel) remoteTree.getModel();
+            DefaultMutableTreeNode selectedNode = currentDefaultMutableTreeNodeInRemoteTree; // Node đang được chọn
 
+            // Tạo node mới
+            Node newNode = Node.builder()
+                    .name(folderName)
+                    .path(fullPath)
+                    .build();
+            Node loading = Node.builder()
+                    .name("Loading...")
+                    .path("")
+                    .build();
+            DefaultMutableTreeNode newFolderNode = new DefaultMutableTreeNode(newNode);
+            newFolderNode.add(new DefaultMutableTreeNode(loading));
+
+            // Thêm node mới vào node đang được chọn
+            selectedNode.add(newFolderNode);
+
+            // Thông báo cho TreeModel rằng node đã thay đổi
+            treeModel.nodesWereInserted(selectedNode, new int[]{selectedNode.getChildCount() - 1});
+
+        }
+        ;
+
+        // render lại
         java.util.List<String> response = commonCommand.listDetail(currentNodeInRemoteTree.getPath());
         updateRemoteTable(remoteTable, processListFileAndFolder(response));
 
@@ -1182,7 +1209,7 @@ public class Client extends JFrame {
     }
 
     private void updateRemoteTable(JTable table, Object[][] data) {
-        String[] columnNames = {"Name", "Size", "Type", "Last Modified"};
+        String[] columnNames = {"Name", "Size", "Type", "Last Modified", "itemId", "isPublic", "isOwner"};
         // if ...
         // Cập nhật model bảng
         DefaultTableModel model = new DefaultTableModel(data, columnNames);
@@ -1203,7 +1230,7 @@ public class Client extends JFrame {
     }
 
     private Object[][] processListFileAndFolder(java.util.List<String> ftpData) {
-        Object[][] tableData = new Object[ftpData.size()][4];
+        Object[][] tableData = new Object[ftpData.size()][7];
 
         for (int i = 0; i < ftpData.size(); i++) {
             String line = ftpData.get(i);
@@ -1213,14 +1240,20 @@ public class Client extends JFrame {
             String permissions = parts[0];
             String type = permissions.startsWith("d") ? "Folder" : "File";
             String size = type.equals("Folder") ? "-" : parts[1] + " bytes"; // Folder không hiển thị kích thước
-            String date = parts[2] + " " + parts[3] + " " + parts[4] + " " + parts[5] + " " + parts[6] + " " + parts[7];
-            String name = parts.length > 8 ? parts[8] : ""; // Lấy phần tên (nếu có)
+            String date = parts[2];
+            String itemId = parts[3];
+            String isPublic = parts[4];
+            String isOwner = parts[5];
+            String name = parts.length > 5 ? parts[6] : ""; // Lấy phần tên (nếu có)
 
             // Gán dữ liệu vào mảng
             tableData[i][0] = name;     // Name
             tableData[i][1] = size;     // Size
             tableData[i][2] = type;     // Type
             tableData[i][3] = date;     // Last Modified
+            tableData[i][4] = itemId;
+            tableData[i][5] = isPublic;
+            tableData[i][6] = isOwner;
         }
 
         return tableData;

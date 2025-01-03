@@ -66,9 +66,9 @@ public class FileCommandImpl implements FileCommand {
     }
 
     @Override
-    public void delete(String remoteFilePath) {
+    public boolean delete(String remoteFilePath) {
         ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.DELE, remoteFilePath));
-        ftpClient.receiveCommand();
+        return ftpClient.receiveCommand().startsWith("226");
     }
 
     @Override

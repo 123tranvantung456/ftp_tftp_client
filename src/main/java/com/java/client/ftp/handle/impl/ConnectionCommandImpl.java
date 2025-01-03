@@ -19,14 +19,10 @@ public class ConnectionCommandImpl implements ConnectionCommand {
     @Override
     public void openConnection(String serverAddress, Integer serverPort, String username, String password) {
         try {
-                serverAddress = Const.FTP_ADDRESS;
-                serverPort = Const.FTP_PORT;
-                username = "2";
-                password = "2";
-//            serverAddress = Const.FTP_ADDRESS;
-//            serverPort = Const.FTP_PORT;
-//            username = "tranvantung";
-//            password = "hellotung";
+//                serverAddress = Const.FTP_ADDRESS;
+//                serverPort = Const.FTP_PORT;
+//                username = "2";
+//                password = "2";
 
             ftpClient.connect(serverAddress, serverPort);
             ftpClient.receiveCommand();

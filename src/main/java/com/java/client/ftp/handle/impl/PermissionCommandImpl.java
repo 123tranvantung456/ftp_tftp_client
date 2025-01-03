@@ -26,43 +26,45 @@ public class PermissionCommandImpl implements PermissionCommand {
 
     @Override
     public boolean createPermission(String argToServer) {
-//        ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.CPER, argToServer));
-//        if (ftpClient.receiveCommand().startsWith("200")){
-//            return true;
-//        }
-//        return false;
-        System.out.println("createPermission: " + argToServer);
-        return true;
+        ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.CPER, argToServer));
+        if (ftpClient.receiveCommand().startsWith("200")){
+            return true;
+        }
+        return false;
+//        System.out.println("createPermission: " + argToServer);
+//        return true;
     }
 
     @Override
     public boolean deletePermission(String argToServer ) {
-//        ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.DPER, argToServer));
-//        if (ftpClient.receiveCommand().startsWith("200")){
-//            return true;
-//        }
-        System.out.println("deletePermission: " + argToServer);
+        ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.DPER, argToServer));
+        if (ftpClient.receiveCommand().startsWith("200")){
+            return true;
+        }
         return false;
+//        System.out.println("deletePermission: " + argToServer);
+//        return false;
     }
 
     @Override
-    public List<String> getPermission(long itemId) {
-//        TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand, SendToServerUtil.message(CommandToServer.PER, itemId + ""));
-//        if (ftpClient.receiveCommand().startsWith("200")) {
-//            return dataFromServer();
-//        }
-//        return null;
-        return Arrays.asList(
-                "USER",
-                "tung",
-                "van",
-                "khanh",
-                "dev",
-                "USER PERMISSION",
-                "dang READ",
-                "xuan WRITE",
-                "heo ALL"
-        );
+    public List<String> getPermission(String itemId) {
+        TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand, SendToServerUtil.message(CommandToServer.PER, itemId + ""));
+        List <String> ret = dataFromServer();
+        if (ftpClient.receiveCommand().startsWith("200")) {
+            return ret;
+        }
+        return null;
+//        return Arrays.asList(
+//                "USER",
+//                "tung",
+//                "van",
+//                "id/khanh",
+//                "id/dev",
+//                "PERMISSION",
+//                "dang/READ",
+//                "id/xuan/WRITE",
+//                "id/heo/ALL"
+//        );
     }
 
     private List<String> dataFromServer() {
@@ -72,6 +74,9 @@ public class PermissionCommandImpl implements PermissionCommand {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (!line.trim().isEmpty()) {
+                    if (line.indexOf("/")!=-1){
+                        line=line.substring(line.indexOf("/") + 1);
+                    }
                     fileList.add(line.trim());
                 }
             }

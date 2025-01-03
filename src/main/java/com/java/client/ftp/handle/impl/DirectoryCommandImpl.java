@@ -13,15 +13,15 @@ public class DirectoryCommandImpl implements DirectoryCommand {
     private final FTPClient ftpClient;
 
     @Override
-    public void makeDirectory(String remoteDirectory) {
+    public boolean makeDirectory(String remoteDirectory) {
         ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.XMKD, remoteDirectory));
-        ftpClient.receiveCommand();
+        return ftpClient.receiveCommand().startsWith("257");
     }
 
     @Override
-    public void removeDirectory(String remoteDirectory) {
+    public boolean removeDirectory(String remoteDirectory) {
         ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.XRMD, remoteDirectory));
-        ftpClient.receiveCommand();
+        return ftpClient.receiveCommand().startsWith("257");
     }
 
     @Override

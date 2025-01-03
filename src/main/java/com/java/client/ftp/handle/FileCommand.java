@@ -5,7 +5,7 @@ public interface FileCommand {
     void multiPut(String[] filenames);
     void get(String filename);
     void multiGet(String[] filenames);
-    void delete(String filename);
+    boolean delete(String filename);
     void multiDelete(String[] filenames);
     void send(String localFilePath, String remoteFilePath);
     void receive(String localFilePath, String remoteFilePath);

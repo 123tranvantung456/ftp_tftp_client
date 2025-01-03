@@ -7,5 +7,5 @@ public interface CommonCommand {
     void listDetailAndStore(String remoteDirectory, String outputFile);
     List<String> listName(String remoteDirectory);
     void listNameAndStore(String remoteDirectory, String outputFile);
-    void rename(String oldName, String newName);
+    boolean rename(String oldName, String newName);
 }

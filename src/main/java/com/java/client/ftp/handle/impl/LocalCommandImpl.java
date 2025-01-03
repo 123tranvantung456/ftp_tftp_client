@@ -36,31 +36,6 @@ public class LocalCommandImpl implements LocalCommand {
     }
 
     @Override
-    public void sendLiteralCommand(String command) {
-
-    }
-
-    @Override
-    public void togglePromptMode(boolean enable) {
-
-    }
-
-    @Override
-    public void toggleGlobMode(boolean enable) {
-
-    }
-
-    @Override
-    public void toggleTraceMode(boolean enable) {
-
-    }
-
-    @Override
-    public void toggleVerboseMode(boolean enable) {
-
-    }
-
-    @Override
     public void showStatus() {
 
         PrintUtil.printToConsole("debug: " + (clientConfig.isDebug() ? "on" : "off"));
@@ -76,15 +51,5 @@ public class LocalCommandImpl implements LocalCommand {
         PrintUtil.printToConsole("Current directory: " + clientConfig.getCurrentDirectory());
 
         PrintUtil.printToConsole("Login status: " + (clientConfig.isLogin() ? "Logged in" : "Not logged in"));
-    }
-
-    @Override
-    public void toggleHashMode(boolean enable) {
-
-    }
-
-    @Override
-    public void displayHelp() {
-
     }
 }

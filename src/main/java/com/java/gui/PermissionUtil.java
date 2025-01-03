@@ -30,7 +30,7 @@ public class PermissionUtil {
         if(responseFromServer != null && !responseFromServer.isEmpty()) {
             if (responseFromServer.get(0).equals("USER")){
                 for (int i = 1; i < responseFromServer.size(); i++) {
-                    if(responseFromServer.get(i).equals("USER PERMISSION")){
+                    if(responseFromServer.get(i).equals("PERMISSION")){
                         return result;
                     }
                     result.add(responseFromServer.get(i));
@@ -45,10 +45,10 @@ public class PermissionUtil {
         if(responseFromServer != null && !responseFromServer.isEmpty()) {
             if (responseFromServer.get(0).equals("USER")){
                 for (int i = responseFromServer.size() - 1; i >= 0; i--) {
-                    if (responseFromServer.get(i).equals("USER PERMISSION")) {
+                    if (responseFromServer.get(i).equals("PERMISSION")) {
                         return result;
                     }
-                    String[] data = responseFromServer.get(i).split(" ");
+                    String[] data = responseFromServer.get(i).split("/");
                     result.add(
                             UserPermission.builder()
                                     .username(data[0])
