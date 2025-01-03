@@ -556,6 +556,8 @@ public class Client extends JFrame {
                 .path("")
                 .build();
         DefaultMutableTreeNode root = new DefaultMutableTreeNode(nodeRoot);
+        currentNodeInRemoteTree = (Node) root.getUserObject();
+        currentDefaultMutableTreeNodeInRemoteTree = root;
         DefaultTreeModel model = new DefaultTreeModel(root);
         JTree tree = new JTree(model);
         // addloading
@@ -1042,7 +1044,27 @@ public class Client extends JFrame {
                     if (fileCommand.delete(fullPath)) model.removeRow(row);
                 } else if (type.equals("Folder")) {
                     // check success =>
-                    if (directoryCommand.removeDirectory(fullPath)) model.removeRow(row);
+                    if (directoryCommand.removeDirectory(fullPath)) {
+                        // table
+                        // Xóa hàng khỏi bảng
+                        if (row >= 0 && row < model.getRowCount()) {
+                            model.removeRow(row); // Xóa hàng
+                        }
+
+                        //tree
+                        // Xóa node khỏi cây
+                        DefaultTreeModel treeModel = (DefaultTreeModel) remoteTree.getModel();
+                        DefaultMutableTreeNode selectedNode = currentDefaultMutableTreeNodeInRemoteTree;
+
+                        if (selectedNode != null && row >= 0 && row < selectedNode.getChildCount()) {
+                            // Lấy và xóa node con tại vị trí `row`
+                            DefaultMutableTreeNode nodeToRemove = (DefaultMutableTreeNode) selectedNode.getChildAt(row);
+                            selectedNode.remove(row);
+
+                            // Thông báo cho TreeModel rằng một node đã bị xóa
+                            treeModel.nodesWereRemoved(selectedNode, new int[]{row}, new Object[]{nodeToRemove});
+                        }
+                    }
                 }
             }
 //            java.util.List<String> response = commonCommand.listDetail(currentNodeInRemoteTree.getPath());
@@ -1083,7 +1105,19 @@ public class Client extends JFrame {
                 //render table
                 table.setValueAt(newName, rowIndex, 0);
                 //render tree
-                
+
+                // Cập nhật tên node trong cây
+                DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)currentDefaultMutableTreeNodeInRemoteTree.getChildAt(rowIndex);
+
+                if (selectedNode != null) {
+                    // Thay đổi tên node trong cây
+                    Node node = (Node) selectedNode.getUserObject();
+                    node.setName(newName);
+
+                    // Cập nhật mô hình cây
+                    DefaultTreeModel treeModel = (DefaultTreeModel) remoteTree.getModel();
+                    treeModel.nodeChanged(selectedNode); // Thông báo cây đã thay đổi
+                }
             }
         }
     }
