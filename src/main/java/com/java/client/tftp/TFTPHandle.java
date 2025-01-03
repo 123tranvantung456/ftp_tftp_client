@@ -51,7 +51,7 @@ public class TFTPHandle {
         try (DatagramSocket socket = new DatagramSocket()) {
             InetAddress serverAddress = InetAddress.getByName(server);
 
-            byte[] request = createRequest(requestType, fileName, mode);
+            byte[] request = createRequest(requestType, fileName, mode, BUFFER_SIZE);
             DatagramPacket packet = new DatagramPacket(request, request.length, serverAddress, port);
             socket.send(packet);
 
@@ -66,14 +66,26 @@ public class TFTPHandle {
         }
     }
 
-    public byte[] createRequest(short requestType, String fileName, String mode) {
+    private byte[] createRequest(short requestType, String fileName, String mode, int blockSize) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
+            // Ghi opcode (requestType) vào gói tin
             baos.write(ByteBuffer.allocate(2).putShort(requestType).array());
+
+            // Ghi tên file vào gói tin
             baos.write(fileName.getBytes());
-            baos.write(0);
+            baos.write(0); // Null byte to separate file name and mode
+
+            // Ghi chế độ vào gói tin
             baos.write(mode.getBytes());
-            baos.write(0);
+            baos.write(0); // Null byte to terminate mode string
+
+            // Thêm tùy chọn blksize vào yêu cầu (client yêu cầu kích thước gói tin)
+            baos.write("blksize".getBytes());  // Tên của tùy chọn
+            baos.write(0);  // Null byte after the option name
+            baos.write(Integer.toString(blockSize).getBytes());  // Giá trị của tùy chọn blksize
+            baos.write(0);  // Null byte to terminate the option value
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -83,7 +95,7 @@ public class TFTPHandle {
     public void handleDownload(DatagramSocket socket, String fileName, String mode, JTextArea logArea) throws IOException {
         long startTime = System.currentTimeMillis();
         long totalBytes = 0;
-        fileName = "D:\\Dowloads\\" + fileName;
+        fileName = "C:\\Users\\caube\\Downloads\\" + fileName;
         System.out.println(fileName);
         try (FileOutputStream fos = new FileOutputStream(fileName);
              OutputStream os = (mode.equals("netascii")
