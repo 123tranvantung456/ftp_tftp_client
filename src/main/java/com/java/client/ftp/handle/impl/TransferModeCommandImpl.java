@@ -67,7 +67,7 @@ public class TransferModeCommandImpl implements TransferModeCommand {
             ServerSocket serverSocket = new ServerSocket(0);
             int localPort = serverSocket.getLocalPort();
             String localHost = InetAddress.getLocalHost().getHostAddress();
-            String extendPortArg = "|1|" + "192.168.1.3" + "|" + localPort + "|";
+            String extendPortArg = "|1|" + localHost + "|" + localPort + "|";
             ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.EPRT, extendPortArg));
             return handleResponseActiveMode(commandToServer, serverSocket);
         } catch (Exception e) {

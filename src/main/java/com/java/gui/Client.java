@@ -4,6 +4,7 @@ import com.java.client.ftp.enums.Permission;
 import com.java.client.ftp.enums.TransferMode;
 import com.java.client.ftp.handle.*;
 import com.java.client.ftp.system.ClientConfig;
+import com.java.client.ftp.system.Const;
 import com.java.client.tftp.TFTPHandle;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -147,6 +148,7 @@ public class Client extends JFrame {
             } else {
                 logArea.append("Please fill in all the fields.\n");
             }
+            Const.FTP_ADDRESS = host;
         } catch (NumberFormatException ex) {
             logArea.append("Invalid port number.\n");
         } catch (Exception ex) {
@@ -507,7 +509,7 @@ public class Client extends JFrame {
                     fileCommand.send(file, fullPathToServer);
                     // if success : ghi log
                 } else if (protocol.equals("TFTP")) {
-                    tftpHandle.handleRequest(TFTPHandle.OP_WRQ, file, type, logArea);
+                    tftpHandle.handleRequest(TFTPHandle.OP_WRQ, file, type, logArea, clientConfig.getBlockSize(), clientConfig.getFolderToDownload());
                 }
             }
             java.util.List<String> response = commonCommand.listDetail(currentNodeInRemoteTree.getPath());
@@ -692,11 +694,14 @@ public class Client extends JFrame {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
+
                     TreePath path = remoteTree.getPathForLocation(e.getX(), e.getY()); // Lấy node tại vị trí click
                     if (path != null) {
                         remoteTree.setSelectionPath(path); // Chọn node
                         DefaultMutableTreeNode selectedNode =
                                 (DefaultMutableTreeNode) remoteTree.getLastSelectedPathComponent();
+                        currentNodeInRemoteTree = (Node) selectedNode.getUserObject();
+                        currentDefaultMutableTreeNodeInRemoteTree = selectedNode;
                         if (selectedNode != null) {
 //                            String selectedFolder = selectedNode.toString();
 //                            logArea.append("Remote folder selected: " + selectedFolder + "\n");
@@ -828,8 +833,8 @@ public class Client extends JFrame {
 
                     // Cập nhật trạng thái menu
                     downloadItem.setEnabled(!hasFolderSelected && selectedRows.length >= 1);
-                    renameItem.setEnabled(selectedRows.length == 1);
-                    deleteItem.setEnabled(selectedRows.length >= 1);
+                    renameItem.setEnabled(selectedRows.length == 1 && !table.getValueAt(table.getSelectedRow(), 0).equals("public"));
+                    deleteItem.setEnabled(selectedRows.length >= 1 && !table.getValueAt(table.getSelectedRow(), 0).equals("public"));
                     permissionItem.setEnabled(table.getValueAt(table.getSelectedRows()[0], 6).equals("true") && selectedRows.length == 1);
                     changeStatusItem.setEnabled(selectedRows.length == 1 && table.getValueAt(table.getSelectedRows()[0], 6).equals("true"));
 
@@ -1096,7 +1101,7 @@ public class Client extends JFrame {
                     fileCommand.get(fullPath);
                     // if success : ghi log
                 } else if (protocol.equals("TFTP")) {
-                    tftpHandle.handleRequest(TFTPHandle.OP_RRQ, file, type, logArea);
+                    tftpHandle.handleRequest(TFTPHandle.OP_RRQ, file, type, logArea, clientConfig.getBlockSize(), clientConfig.getFolderToDownload());
                 }
             }
 //            updateLocalTable(localTable, getFileFromNode(currentDefaultMutableTreeNodeInLocalTree));
@@ -1208,19 +1213,21 @@ public class Client extends JFrame {
             if (commonCommand.rename(fullPathOld, fullPathNew)) {
                 //render table
                 table.setValueAt(newName, rowIndex, 0);
-                //render tree
+                if(table.getValueAt(rowIndex, 2).equals("Folder")){
+                    //render tree
 
-                // Cập nhật tên node trong cây
-                DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)currentDefaultMutableTreeNodeInRemoteTree.getChildAt(rowIndex);
+                    // Cập nhật tên node trong cây
+                    DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)currentDefaultMutableTreeNodeInRemoteTree.getChildAt(rowIndex);
 
-                if (selectedNode != null) {
-                    // Thay đổi tên node trong cây
-                    Node node = (Node) selectedNode.getUserObject();
-                    node.setName(newName);
+                    if (selectedNode != null) {
+                        // Thay đổi tên node trong cây
+                        Node node = (Node) selectedNode.getUserObject();
+                        node.setName(newName);
 
-                    // Cập nhật mô hình cây
-                    DefaultTreeModel treeModel = (DefaultTreeModel) remoteTree.getModel();
-                    treeModel.nodeChanged(selectedNode); // Thông báo cây đã thay đổi
+                        // Cập nhật mô hình cây
+                        DefaultTreeModel treeModel = (DefaultTreeModel) remoteTree.getModel();
+                        treeModel.nodeChanged(selectedNode); // Thông báo cây đã thay đổi
+                    }
                 }
             }
         }

@@ -1,5 +1,6 @@
 package com.java.client.tftp;
 
+import com.java.client.ftp.system.ClientConfig;
 import com.java.client.ftp.system.Const;
 
 import javax.swing.*;
@@ -9,17 +10,18 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
+import java.nio.file.Paths;
 
 public class TFTPHandle {
-    public static final int BUFFER_SIZE = 64004;
+    public static int BUFFER_SIZE = 64004;
+    public static String defaultDownloadPath = "";
     public static final short OP_RRQ = 1;
     public static final short OP_WRQ = 2;
     public static final short OP_DAT = 3;
     public static final short OP_ACK = 4;
     public static final short OP_ERR = 5;
 
-
-    public void handleRequest(short requestType, String filePath, String type, JTextArea logArea) {
+    public void handleRequest(short requestType, String filePath, String type, JTextArea logArea, int SIZE, String downloadPath) {
         String server = Const.FTP_ADDRESS;
         String portText = "69";
         String mode = "";
@@ -50,12 +52,13 @@ public class TFTPHandle {
 
         try (DatagramSocket socket = new DatagramSocket()) {
             InetAddress serverAddress = InetAddress.getByName(server);
-
+            BUFFER_SIZE = SIZE;
             byte[] request = createRequest(requestType, fileName, mode, BUFFER_SIZE);
             DatagramPacket packet = new DatagramPacket(request, request.length, serverAddress, port);
             socket.send(packet);
 
             if (requestType == OP_RRQ) {
+                defaultDownloadPath = downloadPath;
                 handleDownload(socket, fileName, mode, logArea );
             } else if (requestType == OP_WRQ) {
                 handleUpload(socket, filePath, serverAddress, mode, logArea);
@@ -95,7 +98,7 @@ public class TFTPHandle {
     public void handleDownload(DatagramSocket socket, String fileName, String mode, JTextArea logArea) throws IOException {
         long startTime = System.currentTimeMillis();
         long totalBytes = 0;
-        fileName = "C:\\Users\\caube\\Downloads\\" + fileName;
+        fileName = defaultDownloadPath + "\\" + fileName;
         System.out.println(fileName);
         try (FileOutputStream fos = new FileOutputStream(fileName);
              OutputStream os = (mode.equals("netascii")

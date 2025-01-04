@@ -22,6 +22,6 @@ public class ClientConfig {
     private PassiveType passiveTypeDefault = PassiveType.EPSV;
     private boolean isLogin = false;
     private boolean isDebug = false;
-    private int blockSize = 516;
+    private int blockSize = 62000;
     private String folderToDownload = Paths.get(System.getProperty("user.home"), "Downloads").toString();
 }
