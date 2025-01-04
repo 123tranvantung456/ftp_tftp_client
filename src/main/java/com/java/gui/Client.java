@@ -831,7 +831,7 @@ public class Client extends JFrame {
                     renameItem.setEnabled(selectedRows.length == 1);
                     deleteItem.setEnabled(selectedRows.length >= 1);
                     permissionItem.setEnabled(table.getValueAt(table.getSelectedRows()[0], 6).equals("true") && selectedRows.length == 1);
-                    changeStatusItem.setEnabled(selectedRows.length == 1 && table.getValueAt(table.getSelectedRows()[0], 5).equals("true"));
+                    changeStatusItem.setEnabled(selectedRows.length == 1 && table.getValueAt(table.getSelectedRows()[0], 6).equals("true"));
 
                     // Hiển thị menu chuột phải
                     popupMenu.show(table, e.getX(), e.getY());

@@ -97,7 +97,7 @@ public class CommonCommandImpl implements CommonCommand {
     public boolean changeStatus(String sendToServer) {
         ftpClient.sendCommand(sendToServer);
         String response = ftpClient.receiveCommand();
-        return !response.startsWith("200");
+        return response.startsWith("200");
     }
 
     private List<String> listNameHandle(String remoteDirectory, CommandToServer commandToServer) {
