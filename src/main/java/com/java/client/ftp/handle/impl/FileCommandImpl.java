@@ -14,6 +14,7 @@ import com.java.client.ftp.util.TransferModeUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.nio.file.Paths;
 import java.util.*;
 import java.io.*;
 
@@ -132,7 +133,7 @@ public class FileCommandImpl implements FileCommand {
         else {
             name = filename;
         }
-        File file = new File("D:\\Dowloads\\" + name);
+        File file = new File(Paths.get(System.getProperty("user.home"), "Downloads") + "\\" + name);
         boolean isPer = TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand, messageToServer);
         if (clientConfig.getTransferType() == TransferType.ASCII){
             getWithAsciiMode(file);

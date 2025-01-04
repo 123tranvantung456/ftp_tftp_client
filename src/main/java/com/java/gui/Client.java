@@ -55,7 +55,7 @@ public class Client extends JFrame {
     private JPanel logPanel;
 
     public Client() {
-        setTitle("FTP Client");
+        setTitle("Client");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1200, 800);
         setLocationRelativeTo(null);
@@ -840,7 +840,9 @@ public class Client extends JFrame {
                     // Cập nhật trạng thái menu
                     downloadItem.setEnabled(!hasFolderSelected && selectedRows.length >= 1);
                     renameItem.setEnabled(selectedRows.length == 1 && !table.getValueAt(table.getSelectedRow(), 0).equals("public"));
-                    deleteItem.setEnabled(selectedRows.length >= 1 && !table.getValueAt(table.getSelectedRow(), 0).equals("public"));
+                    deleteItem.setEnabled(selectedRows.length >= 1 && !table.getValueAt(table.getSelectedRow(), 0).equals("public")
+                            && table.getValueAt(table.getSelectedRow(), 6).equals("true")
+                            || currentNodeInRemoteTree.getPath().equals("public"));
                     permissionItem.setEnabled(table.getValueAt(table.getSelectedRows()[0], 6).equals("true") && selectedRows.length == 1);
                     changeStatusItem.setEnabled(selectedRows.length == 1 && table.getValueAt(table.getSelectedRows()[0], 6).equals("true"));
 
