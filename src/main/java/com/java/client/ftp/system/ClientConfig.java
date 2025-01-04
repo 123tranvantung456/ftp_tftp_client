@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.stereotype.Component;
 
+import java.nio.file.Paths;
+
 @Component
 @Setter
 @Getter
@@ -20,4 +22,6 @@ public class ClientConfig {
     private PassiveType passiveTypeDefault = PassiveType.EPSV;
     private boolean isLogin = false;
     private boolean isDebug = false;
+    private int blockSize = 516;
+    private String folderToDownload = Paths.get(System.getProperty("user.home"), "Downloads").toString();
 }

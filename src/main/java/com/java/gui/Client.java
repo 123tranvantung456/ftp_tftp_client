@@ -79,8 +79,10 @@ public class Client extends JFrame {
         connectionPanel.add(portField);
         JButton connectButton = new JButton("Quickconnect");
         connectionPanel.add(connectButton);
-        JButton btnSetting = new JButton("Setting");
-        connectionPanel.add(btnSetting);
+        JButton btnSettingFTP = new JButton("Setting FTP");
+        connectionPanel.add(btnSettingFTP);
+        JButton btnSettingTFTP = new JButton("Setting TFTP");
+        connectionPanel.add(btnSettingTFTP);
 
         // Khu vực log
         logArea = new JTextArea(50, 20);
@@ -122,7 +124,8 @@ public class Client extends JFrame {
 
         // Gọi hàm xử lý khi nút được nhấn
         connectButton.addActionListener(e -> handleConnect(hostField, usernameField, passwordField, portField));
-        btnSetting.addActionListener(e -> handleSettingsDialog());
+        btnSettingFTP.addActionListener(e -> handleSettingsDialogFTP());
+        btnSettingTFTP.addActionListener(e -> handleSettingsDialogTFTP());
     }
 
     // connect
@@ -150,8 +153,8 @@ public class Client extends JFrame {
         }
     }
 
-    private void handleSettingsDialog() {
-        JDialog settingsDialog = new JDialog((Frame) null, "Settings", true);
+    private void handleSettingsDialogFTP() {
+        JDialog settingsDialog = new JDialog((Frame) null, "Settings - FTP", true);
         settingsDialog.setLayout(null);
 
         // Tạo các thành phần
@@ -164,8 +167,9 @@ public class Client extends JFrame {
         // Đặt vị trí
         transferModeLabel.setBounds(20, 20, 100, 25);
         transferModeComboBox.setBounds(120, 20, 240, 25);
-        confirmButton.setBounds(80, 60, 80, 30);
-        cancelButton.setBounds(200, 60, 100, 30);
+
+        confirmButton.setBounds(80, 80, 80, 30);
+        cancelButton.setBounds(200, 80, 100, 30);
 
         // Thiết lập giá trị mặc định cho combobox
         TransferMode currentTransferMode = clientConfig.getTransferModeDefault();
@@ -183,6 +187,7 @@ public class Client extends JFrame {
 
         // Xử lý sự kiện nút OK
         confirmButton.addActionListener(e -> {
+            // Lấy giá trị transfer mode
             String selectedTransferMode = (String) transferModeComboBox.getSelectedItem();
             if ("Active".equals(selectedTransferMode)) {
                 clientConfig.setTransferModeDefault(TransferMode.ACTIVE);
@@ -197,6 +202,85 @@ public class Client extends JFrame {
 
         // Cài đặt cho dialog
         settingsDialog.setSize(400, 150);
+        settingsDialog.setLocationRelativeTo(null);
+        settingsDialog.setResizable(false);
+        settingsDialog.setVisible(true);
+    }
+
+    private void handleSettingsDialogTFTP() {
+        JDialog settingsDialog = new JDialog((Frame) null, "Settings - TFTP", true);
+        settingsDialog.setLayout(null);
+
+        // Tạo các thành phần
+        JLabel blockSizeLabel = new JLabel("Block Size:");
+        JTextField blockSizeInput = new JTextField(String.valueOf(clientConfig.getBlockSize()));
+
+        JLabel folderLabel = new JLabel("Download Folder:");
+        JTextField folderTextField = new JTextField(clientConfig.getFolderToDownload());
+        folderTextField.setEditable(false);
+
+        JButton selectFolderButton = new JButton("Select Folder");
+        JButton confirmButton = new JButton("OK");
+        JButton cancelButton = new JButton("Cancel");
+
+        // Đặt vị trí
+        blockSizeLabel.setBounds(20, 20, 100, 25);
+        blockSizeInput.setBounds(120, 20, 240, 25);
+
+        folderLabel.setBounds(20, 60, 120, 25);
+        folderTextField.setBounds(120, 60, 180, 25);
+        selectFolderButton.setBounds(310, 60, 60, 25);
+
+        confirmButton.setBounds(80, 110, 80, 30);
+        cancelButton.setBounds(200, 110, 100, 30);
+
+        // Xử lý sự kiện chọn thư mục
+        selectFolderButton.addActionListener(e -> {
+            JFileChooser folderChooser = new JFileChooser();
+            folderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            int result = folderChooser.showOpenDialog(settingsDialog);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                String selectedFolder = folderChooser.getSelectedFile().getAbsolutePath();
+                folderTextField.setText(selectedFolder);
+            }
+        });
+
+        // Thêm các thành phần vào dialog
+        settingsDialog.add(blockSizeLabel);
+        settingsDialog.add(blockSizeInput);
+        settingsDialog.add(folderLabel);
+        settingsDialog.add(folderTextField);
+        settingsDialog.add(selectFolderButton);
+        settingsDialog.add(confirmButton);
+        settingsDialog.add(cancelButton);
+
+        // Xử lý sự kiện nút OK
+        confirmButton.addActionListener(e -> {
+            // Lấy giá trị block size
+            try {
+                int newBlockSize = Integer.parseInt(blockSizeInput.getText());
+                if (newBlockSize > 0) {
+                    clientConfig.setBlockSize(newBlockSize);
+                } else {
+                    JOptionPane.showMessageDialog(settingsDialog, "Block size must be a positive integer.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(settingsDialog, "Invalid block size. Please enter a valid number.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Cập nhật thư mục tải về
+            clientConfig.setFolderToDownload(folderTextField.getText());
+
+            settingsDialog.dispose();
+        });
+
+        // Xử lý sự kiện nút Cancel
+        cancelButton.addActionListener(e -> settingsDialog.dispose());
+
+        // Cài đặt cho dialog
+        settingsDialog.setSize(400, 200);
         settingsDialog.setLocationRelativeTo(null);
         settingsDialog.setResizable(false);
         settingsDialog.setVisible(true);
