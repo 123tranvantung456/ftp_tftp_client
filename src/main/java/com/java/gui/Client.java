@@ -51,6 +51,8 @@ public class Client extends JFrame {
     private DefaultMutableTreeNode currentDefaultMutableTreeNodeInRemoteTree;
     private DefaultMutableTreeNode currentDefaultMutableTreeNodeInLocalTree;
     private Node currentNodeInRemoteTree;
+    private JSplitPane mainSplitPane;
+    private JPanel logPanel;
 
     public Client() {
         setTitle("FTP Client");
@@ -78,7 +80,7 @@ public class Client extends JFrame {
         connectionPanel.add(new JLabel("Port:"));
         JTextField portField = new JTextField(5);
         connectionPanel.add(portField);
-        JButton connectButton = new JButton("Quickconnect");
+        JButton connectButton = new JButton("Connect");
         connectionPanel.add(connectButton);
         JButton btnSettingFTP = new JButton("Setting FTP");
         connectionPanel.add(btnSettingFTP);
@@ -90,7 +92,7 @@ public class Client extends JFrame {
         logArea.setEditable(false);
         JScrollPane logScrollPane = new JScrollPane(logArea);
 
-        JPanel logPanel = new JPanel(new BorderLayout());
+        logPanel = new JPanel(new BorderLayout());
         logPanel.add(logScrollPane, BorderLayout.CENTER);
         logPanel.setPreferredSize(new Dimension(1200, 150));
 
@@ -111,11 +113,13 @@ public class Client extends JFrame {
                 new JScrollPane(localTree), new JScrollPane(localTable));
         JSplitPane remoteSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
                 new JScrollPane(remoteTree), new JScrollPane(remoteTable));
-        JSplitPane mainSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
+        mainSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
                 localSplitPane, remoteSplitPane);
 
         // Giao diện chính
         setLayout(new BorderLayout());
+        mainSplitPane.setVisible((false));
+        logPanel.setVisible(false);
         add(connectionPanel, BorderLayout.NORTH);
         add(mainSplitPane, BorderLayout.CENTER);
         add(logPanel, BorderLayout.SOUTH);
@@ -145,6 +149,8 @@ public class Client extends JFrame {
 //                logArea.append("Connecting to " + host + ":" + port + " with username " + username + "\n");
                 connectionCommand.openConnection(host, port, username, password);
 //                logArea.append("Connected successfully!\n");
+                mainSplitPane.setVisible((true));
+                logPanel.setVisible(true);
             } else {
                 logArea.append("Please fill in all the fields.\n");
             }
