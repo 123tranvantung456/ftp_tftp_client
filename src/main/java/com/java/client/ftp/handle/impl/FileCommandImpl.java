@@ -35,9 +35,9 @@ public class FileCommandImpl implements FileCommand {
             PrintUtil.printToConsole(file + " does not exist");
         }
         else {
-            handleUploadToServer(filename, file, CommandToServer.STOR);
+            boolean isPer = handleUploadToServer(filename, file, CommandToServer.STOR);
             socketData.closeSockets();
-            ftpClient.receiveCommand();
+            if(isPer) ftpClient.receiveCommand();
         }
     }
 
@@ -50,9 +50,9 @@ public class FileCommandImpl implements FileCommand {
 
     @Override
     public void get(String filename) {
-        handelDownFromServer(filename, SendToServerUtil.message(CommandToServer.RETR, filename));
+        boolean isPer = handelDownFromServer(filename, SendToServerUtil.message(CommandToServer.RETR, filename));
         socketData.closeSockets();
-        ftpClient.receiveCommand();
+        if(isPer) ftpClient.receiveCommand();
     }
 
     @Override
@@ -88,16 +88,16 @@ public class FileCommandImpl implements FileCommand {
             PrintUtil.printToConsole(file + " does not exist");
         }
         else {
-            handleUploadToServer(remoteFilePath, file, CommandToServer.STOR);
+            boolean isPer = handleUploadToServer(remoteFilePath, file, CommandToServer.STOR);
             socketData.closeSockets();
-            ftpClient.receiveCommand();
+            if (isPer) ftpClient.receiveCommand();
         }
     }
 
     @Override
     public void receive(String localFilePath, String remoteFilePath) {
-        handelDownFromServer(localFilePath, SendToServerUtil.message(CommandToServer.RETR, remoteFilePath));
-        ftpClient.receiveCommand();
+        boolean isPer = handelDownFromServer(localFilePath, SendToServerUtil.message(CommandToServer.RETR, remoteFilePath));
+        if (isPer) ftpClient.receiveCommand();
     }
 
     @Override
@@ -107,23 +107,24 @@ public class FileCommandImpl implements FileCommand {
             PrintUtil.printToConsole(file + " does not exist");
         }
         else {
-            handleUploadToServer(remoteFilePath, file, CommandToServer.APPE);
+            boolean isPer = handleUploadToServer(remoteFilePath, file, CommandToServer.APPE);
             socketData.closeSockets();
-            ftpClient.receiveCommand();
+            if (isPer) ftpClient.receiveCommand();
         }
     }
 
-    private void handleUploadToServer(String filename, File file, CommandToServer commandToServer) {
-        TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand, SendToServerUtil.message(commandToServer, filename));
+    private boolean handleUploadToServer(String filename, File file, CommandToServer commandToServer) {
+        boolean isPer = TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand, SendToServerUtil.message(commandToServer, filename));
         if (clientConfig.getTransferType() == TransferType.ASCII){
             putWithAsciiMode(file);
         }
         else if(clientConfig.getTransferType() == TransferType.BINARY){
             putWithBinaryMode(file);
         }
+        return isPer;
     }
 
-    private void handelDownFromServer(String filename, String messageToServer) {
+    private boolean handelDownFromServer(String filename, String messageToServer) {
         String name = null;
         if (filename.contains("/")){
             name = filename.substring(filename.lastIndexOf('/') + 1);
@@ -132,13 +133,14 @@ public class FileCommandImpl implements FileCommand {
             name = filename;
         }
         File file = new File("D:\\Dowloads\\" + name);
-        TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand, messageToServer);
+        boolean isPer = TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand, messageToServer);
         if (clientConfig.getTransferType() == TransferType.ASCII){
             getWithAsciiMode(file);
         }
         else if(clientConfig.getTransferType() == TransferType.BINARY){
             getWithBinaryMode(file);
         }
+        return isPer;
     }
 
     private void putWithAsciiMode(File file){

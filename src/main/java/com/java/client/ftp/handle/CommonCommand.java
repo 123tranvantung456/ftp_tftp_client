@@ -8,4 +8,5 @@ public interface CommonCommand {
     List<String> listName(String remoteDirectory);
     void listNameAndStore(String remoteDirectory, String outputFile);
     boolean rename(String oldName, String newName);
+    boolean changeStatus(String sendToServer);
 }

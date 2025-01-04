@@ -5,11 +5,12 @@ import com.java.client.ftp.handle.TransferModeCommand;
 import com.java.client.ftp.system.ClientConfig;
 
 public class TransferModeUtil {
-    public static void handleTransferMode(ClientConfig clientConfig, TransferModeCommand transferModeCommand, String commandToServer) {
+    public static boolean handleTransferMode(ClientConfig clientConfig, TransferModeCommand transferModeCommand, String commandToServer) {
         if (clientConfig.getTransferModeDefault() == TransferMode.ACTIVE) {
-            transferModeCommand.activeMode(commandToServer);
+            return transferModeCommand.activeMode(commandToServer);
         } else if (clientConfig.getTransferModeDefault() == TransferMode.PASSIVE) {
-            transferModeCommand.passiveMode(commandToServer);
+            return transferModeCommand.passiveMode(commandToServer);
         }
+        return false;
     }
 }

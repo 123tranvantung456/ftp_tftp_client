@@ -128,6 +128,7 @@ public class Client extends JFrame {
         btnSettingTFTP.addActionListener(e -> handleSettingsDialogTFTP());
     }
 
+
     // connect
     private void handleConnect(JTextField hostField, JTextField usernameField, JPasswordField passwordField, JTextField portField) {
         String host = hostField.getText();
@@ -153,6 +154,8 @@ public class Client extends JFrame {
         }
     }
 
+
+    // setting
     private void handleSettingsDialogFTP() {
         JDialog settingsDialog = new JDialog((Frame) null, "Settings - FTP", true);
         settingsDialog.setLayout(null);
@@ -787,6 +790,7 @@ public class Client extends JFrame {
         JMenuItem createItem = new JMenuItem("Create folder");
         JMenuItem renameItem = new JMenuItem("Rename");
         JMenuItem permissionItem = new JMenuItem("Permissions");
+        JMenuItem changeStatusItem = new JMenuItem("Change status");
 
         // Thêm các action listener cho các menu item
         downloadItem.addActionListener(ev -> showDownloadForm(table));
@@ -795,6 +799,7 @@ public class Client extends JFrame {
         createItem.addActionListener(ev -> handleCreateFolder(table));
         renameItem.addActionListener(ev -> handleRenameFile(table, table.getSelectedRow()));
         permissionItem.addActionListener(ev -> handlePermission());
+        changeStatusItem.addActionListener(ev -> handleChangStatus());
 
         popupMenu.add(renameItem);
         popupMenu.add(downloadItem);
@@ -802,6 +807,7 @@ public class Client extends JFrame {
         popupMenu.add(uploadItem);
         popupMenu.add(createItem);
         popupMenu.add(permissionItem);
+        popupMenu.add(changeStatusItem);
 
         // Thêm sự kiện chuột phải
         table.addMouseListener(new MouseAdapter() {
@@ -824,7 +830,8 @@ public class Client extends JFrame {
                     downloadItem.setEnabled(!hasFolderSelected && selectedRows.length >= 1);
                     renameItem.setEnabled(selectedRows.length == 1);
                     deleteItem.setEnabled(selectedRows.length >= 1);
-                    permissionItem.setEnabled(PermissionUtil.checkEnableMenuPermission(null) && selectedRows.length == 1);
+                    permissionItem.setEnabled(table.getValueAt(table.getSelectedRows()[0], 6).equals("true") && selectedRows.length == 1);
+                    changeStatusItem.setEnabled(selectedRows.length == 1 && table.getValueAt(table.getSelectedRows()[0], 5).equals("true"));
 
                     // Hiển thị menu chuột phải
                     popupMenu.show(table, e.getX(), e.getY());
@@ -833,6 +840,19 @@ public class Client extends JFrame {
         });
 
         return table;
+    }
+
+    private void handleChangStatus(){
+        String sendStr = "PUB " + remoteTable.getValueAt(remoteTable.getSelectedRows()[0], 4)
+                + "/" +  remoteTable.getValueAt(remoteTable.getSelectedRows()[0], 5);
+        if(commonCommand.changeStatus(sendStr)) {
+            if(remoteTable.getValueAt(remoteTable.getSelectedRows()[0], 5).equals("true")){
+                remoteTable.setValueAt("false", remoteTable.getSelectedRow(), 5);
+            }
+            else {
+                remoteTable.setValueAt("true", remoteTable.getSelectedRow(), 5);
+            }
+        }
     }
 
     private void handlePermission() {
@@ -1079,7 +1099,7 @@ public class Client extends JFrame {
                     tftpHandle.handleRequest(TFTPHandle.OP_RRQ, file, type, logArea);
                 }
             }
-            updateLocalTable(localTable, getFileFromNode(currentDefaultMutableTreeNodeInLocalTree));
+//            updateLocalTable(localTable, getFileFromNode(currentDefaultMutableTreeNodeInLocalTree));
             downloadDialog.dispose();
         });
 
@@ -1352,7 +1372,7 @@ public class Client extends JFrame {
 
         for (int i = 0; i < ftpData.size(); i++) {
             String line = ftpData.get(i);
-            String[] parts = line.split("\\s+", 9); // Giới hạn split để giữ tên tệp đầy đủ từ phần tử thứ 8 trở đi
+                String[] parts = line.split("\\s+", 7); // Giới hạn split để giữ tên tệp đầy đủ từ phần tử thứ 8 trở đi
 
             // Phân tích từng trường
             String permissions = parts[0];
@@ -1362,7 +1382,7 @@ public class Client extends JFrame {
             String itemId = parts[3];
             String isPublic = parts[4];
             String isOwner = parts[5];
-            String name = parts.length > 5 ? parts[6] : ""; // Lấy phần tên (nếu có)
+            String name = parts.length > 6 ? parts[6] : "";
 
             // Gán dữ liệu vào mảng
             tableData[i][0] = name;     // Name

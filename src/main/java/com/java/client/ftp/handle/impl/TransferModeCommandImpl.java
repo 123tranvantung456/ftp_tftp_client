@@ -28,25 +28,24 @@ public class TransferModeCommandImpl implements TransferModeCommand {
     private final ClientConfig clientConfig;
 
     @Override
-    public void activeMode(String commandToServer) {
+    public boolean activeMode(String commandToServer) {
         ActiveType activeType = clientConfig.getActiveTypeDefault();
         try {
             switch (activeType) {
                 case PORT:
-                    executePortMode(commandToServer);
-                    break;
+                    return executePortMode(commandToServer);
                 case EPRT:
-                    executeEprtMode(commandToServer);
-                    break;
+                    return executeEprtMode(commandToServer);
                 default:
-                    throw new UnsupportedOperationException("Unsupported active mode type: " + activeType);
+                    return false;
             }
         } catch (IOException e) {
             PrintUtil.printErrorToConsole("Active mode error: " + e.getMessage());
         }
+        return false;
     }
 
-    private void executePortMode(String commandToServer) throws IOException {
+    private boolean executePortMode(String commandToServer) throws IOException {
         try {
             ServerSocket serverSocket = new ServerSocket(0);
             int localPort = serverSocket.getLocalPort();
@@ -56,70 +55,72 @@ public class TransferModeCommandImpl implements TransferModeCommand {
             int p2 = localPort % 256;
             String portCommandArg = String.join(",", ipParts[0], ipParts[1], ipParts[2], ipParts[3], String.valueOf(p1), String.valueOf(p2));
             ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.PORT, portCommandArg));
-            handleResponseActiveMode(commandToServer, serverSocket);
+            return handleResponseActiveMode(commandToServer, serverSocket);
         } catch (Exception e) {
             PrintUtil.printErrorToConsole("Active mode error: " + e.getMessage());
         }
+        return false;
     }
 
-    private void executeEprtMode(String commandToServer) throws IOException {
+    private boolean executeEprtMode(String commandToServer) throws IOException {
         try {
             ServerSocket serverSocket = new ServerSocket(0);
             int localPort = serverSocket.getLocalPort();
             String localHost = InetAddress.getLocalHost().getHostAddress();
             String extendPortArg = "|1|" + "192.168.1.3" + "|" + localPort + "|";
             ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.EPRT, extendPortArg));
-            handleResponseActiveMode(commandToServer, serverSocket);
+            return handleResponseActiveMode(commandToServer, serverSocket);
         } catch (Exception e) {
             PrintUtil.printErrorToConsole("Active mode error: " + e.getMessage());
         }
+        return false;
     }
 
-    private void handleResponseActiveMode(String commandToServer, ServerSocket serverSocket) throws IOException {
+    private boolean handleResponseActiveMode(String commandToServer, ServerSocket serverSocket) throws IOException {
         ftpClient.receiveCommand();
         ftpClient.sendCommand(commandToServer);
         Socket socket = serverSocket.accept();
         String response = ftpClient.receiveCommand();
         if (ResponseCodeUtil.getResponseCode(response) != ResponseCode.FILE_STARTING_TRANSFER) {
             PrintUtil.printToConsole("Error: transfer did not start.");
-            return;
+            return false;
         }
         socketData.setServerSocket(serverSocket);
         socketData.setSocket(socket);
+        return true;
     }
 
     @Override
-    public void passiveMode(String commandToServer) {
+    public boolean passiveMode(String commandToServer) {
         PassiveType passiveType = clientConfig.getPassiveTypeDefault();
         try {
             switch (passiveType) {
                 case PASV:
-                    executePasvMode(commandToServer);
-                    break;
+                    return executePasvMode(commandToServer);
                 case EPSV:
-                    executeEpsvMode(commandToServer);
-                    break;
+                    return executeEpsvMode(commandToServer);
                 default:
-                    throw new UnsupportedOperationException("Unsupported passive mode type: " + passiveType);
+                    return false;
             }
         } catch (IOException e) {
             PrintUtil.printErrorToConsole("Passive mode error: " + e.getMessage());
         }
+        return false;
     }
 
-    private void executePasvMode(String commandToServer) throws IOException {
+    private boolean executePasvMode(String commandToServer) throws IOException {
         ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.PASV));
         String response = ftpClient.receiveCommand();
-        handlePasvResponse(response, commandToServer);
+        return handlePasvResponse(response, commandToServer);
     }
 
-    private void executeEpsvMode(String commandToServer) throws IOException {
+    private boolean executeEpsvMode(String commandToServer) throws IOException {
         ftpClient.sendCommand(SendToServerUtil.message(CommandToServer.EPSV));
         String response = ftpClient.receiveCommand();
-        handleEpsvResponse(response, commandToServer);
+        return handleEpsvResponse(response, commandToServer);
     }
 
-    private void handlePasvResponse(String responsePASV, String commandToServer) throws IOException {
+    private boolean handlePasvResponse(String responsePASV, String commandToServer) throws IOException {
         ResponseCode responseCode = ResponseCodeUtil.getResponseCode(responsePASV);
         if (responseCode == ResponseCode.USER_EXIT_ACKNOWLEDGED) {
             String[] parts = responsePASV.split("\\(")[1].split("\\)")[0].split(",");
@@ -131,13 +132,15 @@ public class TransferModeCommandImpl implements TransferModeCommand {
             String response = ftpClient.receiveCommand();
             if (ResponseCodeUtil.getResponseCode(response) != ResponseCode.FILE_STARTING_TRANSFER) {
                 PrintUtil.printToConsole("Error: transfer did not start.");
+                return false;
             }
         } else {
             PrintUtil.printErrorToConsole("Invalid response for PASV mode: " + responsePASV);
         }
+        return true;
     }
 
-    private void handleEpsvResponse(String responseEPSV, String commandToServer) throws IOException {
+    private boolean handleEpsvResponse(String responseEPSV, String commandToServer) throws IOException {
         ResponseCode responseCode = ResponseCodeUtil.getResponseCode(responseEPSV);
         if (responseCode == ResponseCode.USER_EXIT_ACKNOWLEDGED) {
             String portString = responseEPSV.split("\\|")[3];
@@ -145,7 +148,7 @@ public class TransferModeCommandImpl implements TransferModeCommand {
             String serverAddress = ftpClient.getServerIpAddress();
             if (serverAddress == null) {
                 PrintUtil.printErrorToConsole("Server address is not available for EPSV mode.");
-                return;
+                return false;
             }
             ftpClient.sendCommand(commandToServer);
             Socket dataSocket = new Socket(serverAddress, serverPort); // de duoi String response = ftpClient.receiveCommand(); la cook : 425 Failed to establish connection.
@@ -153,9 +156,11 @@ public class TransferModeCommandImpl implements TransferModeCommand {
             String response = ftpClient.receiveCommand();
             if (ResponseCodeUtil.getResponseCode(response) != ResponseCode.FILE_STARTING_TRANSFER) {
                 PrintUtil.printToConsole("Error: transfer did not start.");
+                return false;
             }
         } else {
             PrintUtil.printErrorToConsole("Invalid response for EPSV mode: " + responseEPSV);
         }
+        return true;
     }
 }

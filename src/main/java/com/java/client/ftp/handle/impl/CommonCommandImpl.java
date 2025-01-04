@@ -49,14 +49,18 @@ public class CommonCommandImpl implements CommonCommand {
         List<String> result = new ArrayList<>();
         if (clientConfig.getTransferType() == TransferType.ASCII) {
             result = listNameHandle(remoteDirectory, commandToServer);
-            ftpClient.receiveCommand();
+            if(result != null){
+                ftpClient.receiveCommand();
+            }
         } else if (clientConfig.getTransferType() == TransferType.BINARY) {
             transferCommand.setAsciiMode();
             result = listNameHandle(remoteDirectory, commandToServer);
-            ftpClient.receiveCommand();
+            if(result != null){
+                ftpClient.receiveCommand();
+            }
             transferCommand.setBinaryMode();
         }
-        return result;
+        return result == null ? new ArrayList<>() : result;
     }
 
     @Override
@@ -89,10 +93,17 @@ public class CommonCommandImpl implements CommonCommand {
         return false;
     }
 
+    @Override
+    public boolean changeStatus(String sendToServer) {
+        ftpClient.sendCommand(sendToServer);
+        String response = ftpClient.receiveCommand();
+        return !response.startsWith("200");
+    }
 
     private List<String> listNameHandle(String remoteDirectory, CommandToServer commandToServer) {
-        TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand,
+        boolean isPer = TransferModeUtil.handleTransferMode(clientConfig, transferModeCommand,
                 SendToServerUtil.message(commandToServer, remoteDirectory));
+        if (!isPer) return null;
         List<String> fileList = listNameFromServer();
         StringBuilder fileListString = new StringBuilder();
         if (!fileList.isEmpty()) {
