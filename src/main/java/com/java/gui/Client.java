@@ -947,7 +947,7 @@ public class Client extends JFrame {
             });
 
             // Dropdown chọn quyền
-            JComboBox<String> permissionComboBox = new JComboBox<>(new String[]{"READ", "WRITE", "ALL"});
+            JComboBox<String> permissionComboBox = new JComboBox<>(new String[]{"ALL"});
             userTable.getColumnModel().getColumn(1).setCellEditor(new DefaultCellEditor(permissionComboBox));
 
             JScrollPane tableScrollPane = new JScrollPane(userTable);
@@ -965,7 +965,7 @@ public class Client extends JFrame {
                         }
                     }
                     if (!alreadyAdded) {
-                        tableModel.addRow(new Object[]{selectedUser, "READ", false});
+                        tableModel.addRow(new Object[]{selectedUser, "ALL", false});
                     } else {
                         JOptionPane.showMessageDialog(permissionDialog, "User already exists in the list.");
                     }
